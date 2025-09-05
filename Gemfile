@@ -76,6 +76,7 @@ group :development, :test do
   gem "rspec-rails"
   gem "factory_bot_rails"
   gem "faker"
+  gem "shoulda-matchers"
 end
 
 group :development do
@@ -93,4 +94,7 @@ group :test do
   
   # Database cleaner for tests
   gem "database_cleaner-active_record"
+  
+  # SQLite for testing
+  gem "sqlite3"
 end
