@@ -1,0 +1,55 @@
+#!/bin/bash
+
+echo "🔍 Verifying Clay Community Site Setup..."
+echo
+
+# Check if required files exist
+echo "📁 Checking project structure..."
+required_files=(
+  "Gemfile"
+  "docker-compose.yml"
+  "Dockerfile.dev"
+  ".env.example"
+  "config/database.yml"
+  "config/initializers/sidekiq.rb"
+  "config/initializers/cors.rb"
+)
+
+for file in "${required_files[@]}"; do
+  if [ -f "$file" ]; then
+    echo "✅ $file exists"
+  else
+    echo "❌ $file missing"
+  fi
+done
+
+echo
+echo "🐳 Checking Docker setup..."
+if command -v docker &> /dev/null; then
+  echo "✅ Docker is installed"
+else
+  echo "❌ Docker is not installed"
+fi
+
+if docker compose version &> /dev/null; then
+  echo "✅ Docker Compose is available"
+else
+  echo "❌ Docker Compose is not available"
+fi
+
+echo
+echo "💎 Checking Ruby gems..."
+if bundle check &> /dev/null; then
+  echo "✅ All gems are installed"
+else
+  echo "❌ Some gems are missing - run 'bundle install'"
+fi
+
+echo
+echo "🎯 Setup verification complete!"
+echo
+echo "To start the development environment:"
+echo "  docker compose up"
+echo
+echo "To setup the database:"
+echo "  docker compose exec web rails db:create db:migrate"
