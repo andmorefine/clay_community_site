@@ -1,0 +1,37 @@
+FROM ruby:3.4.5-slim
+
+# Install dependencies
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y \
+    build-essential \
+    curl \
+    git \
+    libpq-dev \
+    libvips \
+    libyaml-dev \
+    pkg-config \
+    postgresql-client \
+    imagemagick \
+    && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
+# Set working directory
+WORKDIR /rails
+
+# Install bundler
+RUN gem install bundler
+
+# Copy Gemfile and install gems
+COPY Gemfile Gemfile.lock ./
+RUN bundle install
+
+# Copy application code
+COPY . .
+
+# Create directories for Rails
+RUN mkdir -p tmp/pids log storage
+
+# Expose port
+EXPOSE 3000
+
+# Default command
+CMD ["rails", "server", "-b", "0.0.0.0"]
