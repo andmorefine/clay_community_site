@@ -82,3 +82,6 @@ Thumbs.db
 
 # Ignore Sidekiq
 /dump.rdb
+
+/vendor/bundle/
+.bundle/

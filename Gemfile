@@ -39,6 +39,9 @@ gem "jsonapi-serializer"
 # CORS for API
 gem "rack-cors"
 
+# Pagination
+gem "kaminari"
+
 # Environment variables
 gem "dotenv-rails", groups: [:development, :test]
 
@@ -82,6 +85,8 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+  gem "better_errors"
+  gem "binding_of_caller"
 end
 
 group :test do

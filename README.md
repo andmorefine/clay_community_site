@@ -58,12 +58,12 @@
 
 1. **Install dependencies**
    ```bash
-   bundle install
+   docker compose exec web bundle install
    ```
 
 2. **Setup database**
    ```bash
-   rails db:create db:migrate db:seed
+   docker compose exec web bin/rails db:create db:migrate db:seed
    ```
 
 3. **Start services**

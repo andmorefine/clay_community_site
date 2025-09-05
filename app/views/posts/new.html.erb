@@ -1,0 +1,158 @@
+<div class="container mx-auto px-4 py-8">
+  <div class="max-w-2xl mx-auto">
+    <div class="mb-6">
+      <%= link_to "← Back to Gallery", posts_path, class: "text-blue-600 hover:text-blue-800" %>
+    </div>
+    
+    <h1 class="text-3xl font-bold text-gray-900 mb-8">Create New Post</h1>
+
+    <%= form_with model: @post, local: true, multipart: true, class: "space-y-6" do |form| %>
+      <% if @post.errors.any? %>
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 class="text-red-800 font-semibold mb-2">Please fix the following errors:</h3>
+          <ul class="text-red-700 text-sm space-y-1">
+            <% @post.errors.full_messages.each do |message| %>
+              <li>• <%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <!-- Post Type Selection -->
+      <div>
+        <%= form.label :post_type, "Post Type", class: "block text-sm font-medium text-gray-700 mb-2" %>
+        <div class="flex gap-4">
+          <label class="flex items-center">
+            <%= form.radio_button :post_type, "regular", checked: true, class: "mr-2" %>
+            <span class="text-sm">Regular Post</span>
+          </label>
+          <label class="flex items-center">
+            <%= form.radio_button :post_type, "tutorial", class: "mr-2" %>
+            <span class="text-sm">Tutorial</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Difficulty Level (for tutorials) -->
+      <div id="difficulty-section" style="display: none;">
+        <%= form.label :difficulty_level, "Difficulty Level", class: "block text-sm font-medium text-gray-700 mb-2" %>
+        <%= form.select :difficulty_level, 
+            options_for_select([
+              ['Beginner', 'beginner'],
+              ['Intermediate', 'intermediate'],
+              ['Advanced', 'advanced'],
+              ['Expert', 'expert']
+            ]), 
+            { prompt: 'Select difficulty level' },
+            { class: "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" } %>
+      </div>
+
+      <!-- Title -->
+      <div>
+        <%= form.label :title, "Title", class: "block text-sm font-medium text-gray-700 mb-2" %>
+        <%= form.text_field :title, 
+            placeholder: "Give your creation a catchy title...",
+            class: "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <%= form.label :description, "Description", class: "block text-sm font-medium text-gray-700 mb-2" %>
+        <%= form.text_area :description, 
+            placeholder: "Describe your creation, techniques used, inspiration, or step-by-step process...",
+            rows: 6,
+            class: "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+      </div>
+
+      <!-- Images -->
+      <div>
+        <%= form.label :images, "Images", class: "block text-sm font-medium text-gray-700 mb-2" %>
+        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+          <%= form.file_field :images, 
+              multiple: true, 
+              accept: "image/*",
+              class: "hidden",
+              id: "image-upload" %>
+          <label for="image-upload" class="cursor-pointer">
+            <div class="text-gray-600">
+              <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <p class="text-lg font-medium">Click to upload images</p>
+              <p class="text-sm text-gray-500">or drag and drop</p>
+              <p class="text-xs text-gray-400 mt-2">PNG, JPG, WebP up to 10MB each</p>
+            </div>
+          </label>
+        </div>
+        <div id="image-preview" class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4"></div>
+      </div>
+
+      <!-- Tags -->
+      <div>
+        <%= label_tag :tag_names, "Tags", class: "block text-sm font-medium text-gray-700 mb-2" %>
+        <%= text_field_tag :tag_names, "", 
+            placeholder: "pottery, sculpture, ceramic, glazing (separate with commas)",
+            class: "w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+        <p class="text-sm text-gray-500 mt-1">Add tags to help others discover your post</p>
+      </div>
+
+      <!-- Published Status -->
+      <div class="flex items-center">
+        <%= form.check_box :published, checked: true, class: "mr-2" %>
+        <%= form.label :published, "Publish immediately", class: "text-sm font-medium text-gray-700" %>
+      </div>
+
+      <!-- Submit Buttons -->
+      <div class="flex gap-4 pt-6">
+        <%= form.submit "Create Post", 
+            class: "bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg" %>
+        <%= link_to "Cancel", posts_path, 
+            class: "bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold py-3 px-6 rounded-lg" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Handle post type change
+  const postTypeRadios = document.querySelectorAll('input[name="post[post_type]"]');
+  const difficultySection = document.getElementById('difficulty-section');
+  
+  postTypeRadios.forEach(radio => {
+    radio.addEventListener('change', function() {
+      if (this.value === 'tutorial') {
+        difficultySection.style.display = 'block';
+      } else {
+        difficultySection.style.display = 'none';
+      }
+    });
+  });
+
+  // Handle image preview
+  const imageUpload = document.getElementById('image-upload');
+  const imagePreview = document.getElementById('image-preview');
+  
+  imageUpload.addEventListener('change', function() {
+    imagePreview.innerHTML = '';
+    
+    Array.from(this.files).forEach((file, index) => {
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const div = document.createElement('div');
+          div.className = 'relative';
+          div.innerHTML = `
+            <img src="${e.target.result}" class="w-full h-24 object-cover rounded-lg">
+            <div class="absolute top-1 right-1 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+              ${index + 1}
+            </div>
+          `;
+          imagePreview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  });
+});
+</script>

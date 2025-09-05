@@ -1,0 +1,501 @@
+<div class="container mx-auto px-4 py-6 lg:py-8">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 lg:mb-8 gap-4">
+    <div>
+      <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">Clay Community Gallery</h1>
+      <p class="text-gray-600 mt-1"><%= pluralize(@total_posts_count, 'creation') %> shared by our community</p>
+    </div>
+    <%= link_to "Create New Post", new_post_path, 
+        class: "bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors whitespace-nowrap" %>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="mb-6">
+    <%= form_with url: posts_path, method: :get, local: true, class: "flex gap-2" do |form| %>
+      <%= form.text_field :search, 
+          placeholder: "Search posts, users, or tags...", 
+          value: params[:search],
+          class: "flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+      <%= form.submit "Search", 
+          class: "bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition-colors" %>
+      <% if params[:search].present? %>
+        <%= link_to "Clear", posts_path, 
+            class: "bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg transition-colors" %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <!-- Active Filters Display -->
+  <% if @current_filters.any? %>
+    <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-sm font-medium text-blue-800">Active filters:</span>
+        <% @current_filters.each do |key, value| %>
+          <span class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+            <%= key.to_s.humanize %>: <%= value %>
+            <%= link_to posts_path(@current_filters.except(key)), 
+                class: "ml-1 text-blue-600 hover:text-blue-800" do %>
+              ×
+            <% end %>
+          </span>
+        <% end %>
+        <%= link_to "Clear all", posts_path, 
+            class: "text-sm text-blue-600 hover:text-blue-800 underline ml-2" %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Filters and Sort -->
+  <div class="mb-6 space-y-4 lg:space-y-0 lg:flex lg:justify-between lg:items-center">
+    <!-- Left side filters -->
+    <div class="flex flex-wrap gap-2 lg:gap-4">
+      <!-- Post Type Filter -->
+      <div class="flex gap-1">
+        <%= link_to "All", posts_path(params.except(:post_type)), 
+            class: "px-3 py-1 text-sm rounded-full transition-colors #{params[:post_type].blank? ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
+        <%= link_to "Regular", posts_path(params.merge(post_type: 'regular')), 
+            class: "px-3 py-1 text-sm rounded-full transition-colors #{params[:post_type] == 'regular' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
+        <%= link_to "Tutorials", posts_path(params.merge(post_type: 'tutorial')), 
+            class: "px-3 py-1 text-sm rounded-full transition-colors #{params[:post_type] == 'tutorial' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
+      </div>
+
+      <!-- Difficulty Filter (shown only when tutorials are selected) -->
+      <% if params[:post_type] == 'tutorial' %>
+        <div class="flex gap-1">
+          <% %w[beginner intermediate advanced expert].each do |level| %>
+            <%= link_to level.humanize, posts_path(params.merge(difficulty: level)), 
+                class: "px-3 py-1 text-sm rounded-full transition-colors #{params[:difficulty] == level ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Right side sort options -->
+    <div class="flex gap-1">
+      <%= link_to "Latest", posts_path(params.merge(sort: 'recent')), 
+          class: "px-3 py-1 text-sm rounded-full transition-colors #{(@current_filters[:sort] == 'recent' || @current_filters[:sort].blank?) ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
+      <%= link_to "Popular", posts_path(params.merge(sort: 'popular')), 
+          class: "px-3 py-1 text-sm rounded-full transition-colors #{@current_filters[:sort] == 'popular' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
+      <%= link_to "Trending", posts_path(params.merge(sort: 'trending')), 
+          class: "px-3 py-1 text-sm rounded-full transition-colors #{@current_filters[:sort] == 'trending' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
+    </div>
+  </div>
+
+  <!-- Popular Tags -->
+  <% if @popular_tags.any? %>
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold mb-3">Popular Tags</h3>
+      <div class="flex flex-wrap gap-2">
+        <% @popular_tags.each do |tag| %>
+          <%= link_to posts_path(params.merge(tag: tag.name)), 
+              class: "inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-sm transition-colors #{params[:tag] == tag.name ? 'bg-blue-100 text-blue-800' : 'text-gray-700'}" do %>
+            #<%= tag.name %>
+            <span class="ml-1 text-xs text-gray-500">(<%= tag.posts_count %>)</span>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Posts Grid -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6" id="posts-grid">
+    <% @posts.each do |post| %>
+      <article class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
+        <!-- Image Container -->
+        <div class="relative aspect-square overflow-hidden">
+          <%= link_to post_path(post), class: "block" do %>
+            <% if post.primary_image %>
+              <%= image_tag post.primary_image, 
+                  class: "w-full h-full object-cover group-hover:scale-105 transition-transform duration-300",
+                  alt: post.title,
+                  loading: "lazy" %>
+            <% else %>
+              <div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                <div class="text-center text-gray-400">
+                  <svg class="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                  </svg>
+                  <span class="text-sm">No Image</span>
+                </div>
+              </div>
+            <% end %>
+          <% end %>
+          
+          <!-- Overlay badges -->
+          <div class="absolute top-2 left-2 flex gap-1">
+            <span class="text-xs px-2 py-1 rounded-full font-medium backdrop-blur-sm <%= post.tutorial? ? 'bg-purple-500/90 text-white' : 'bg-blue-500/90 text-white' %>">
+              <%= post.post_type.humanize %>
+            </span>
+            <% if post.tutorial? && post.difficulty_level %>
+              <span class="text-xs px-2 py-1 bg-black/50 text-white rounded-full backdrop-blur-sm">
+                <%= post.difficulty_level.humanize %>
+              </span>
+            <% end %>
+          </div>
+          
+          <!-- Like indicator -->
+          <div class="absolute top-2 right-2">
+            <div class="flex items-center gap-1 px-2 py-1 bg-black/50 text-white rounded-full text-xs backdrop-blur-sm">
+              <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+              </svg>
+              <%= post.likes_count %>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="p-4">
+          <%= link_to post_path(post), class: "block group" do %>
+            <h3 class="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+              <%= post.title %>
+            </h3>
+          <% end %>
+          
+          <p class="text-gray-600 text-sm mb-3 line-clamp-2 leading-relaxed">
+            <%= truncate(post.description, length: 80) %>
+          </p>
+          
+          <!-- Author and stats -->
+          <div class="flex items-center justify-between text-sm mb-3">
+            <%= link_to posts_path(user: post.user.username), 
+                class: "flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors" do %>
+              <div class="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+                <%= post.user.username.first.upcase %>
+              </div>
+              <span class="truncate"><%= post.user.username %></span>
+            <% end %>
+            
+            <div class="flex items-center gap-3 text-gray-500">
+              <span class="flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <%= post.comments_count %>
+              </span>
+            </div>
+          </div>
+          
+          <!-- Tags -->
+          <% if post.tags.any? %>
+            <div class="flex flex-wrap gap-1">
+              <% post.tags.limit(2).each do |tag| %>
+                <%= link_to posts_path(params.merge(tag: tag.name)), 
+                    class: "text-xs text-blue-600 hover:text-blue-800 hover:underline" do %>
+                  #<%= tag.name %>
+                <% end %>
+              <% end %>
+              <% if post.tags.count > 2 %>
+                <span class="text-xs text-gray-400">+<%= post.tags.count - 2 %></span>
+              <% end %>
+            </div>
+          <% end %>
+          
+          <!-- Time ago -->
+          <div class="mt-2 text-xs text-gray-400">
+            <%= time_ago_in_words(post.created_at) %> ago
+          </div>
+        </div>
+      </article>
+    <% end %>
+  </div>
+
+  <!-- Empty State -->
+  <% if @posts.empty? %>
+    <div class="text-center py-16">
+      <div class="max-w-md mx-auto">
+        <div class="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+          <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        
+        <h3 class="text-xl font-semibold text-gray-600 mb-4">
+          <% if @current_filters.any? %>
+            No posts match your filters
+          <% else %>
+            No posts found
+          <% end %>
+        </h3>
+        
+        <p class="text-gray-500 mb-6">
+          <% if @current_filters.any? %>
+            Try adjusting your search criteria or browse all posts.
+          <% else %>
+            Be the first to share your clay creations with the community!
+          <% end %>
+        </p>
+        
+        <div class="flex flex-col sm:flex-row gap-3 justify-center">
+          <% if @current_filters.any? %>
+            <%= link_to "Clear Filters", posts_path, 
+                class: "bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-6 rounded-lg transition-colors" %>
+          <% end %>
+          <%= link_to "Create New Post", new_post_path, 
+              class: "bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors" %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Pagination -->
+  <% if @posts.respond_to?(:current_page) && @posts.total_pages > 1 %>
+    <div class="mt-12 flex justify-center">
+      <nav class="flex items-center space-x-1" aria-label="Pagination">
+        <!-- Previous Page -->
+        <% if @posts.prev_page %>
+          <%= link_to posts_path(params.merge(page: @posts.prev_page)), 
+              class: "px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 hover:text-gray-700 transition-colors" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          <% end %>
+        <% else %>
+          <span class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-300 rounded-l-md cursor-not-allowed">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </span>
+        <% end %>
+
+        <!-- Page Numbers -->
+        <% page_range = [[@posts.current_page - 2, 1].max, [@posts.current_page + 2, @posts.total_pages].min] %>
+        <% (page_range[0]..page_range[1]).each do |page| %>
+          <% if page == @posts.current_page %>
+            <span class="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-300">
+              <%= page %>
+            </span>
+          <% else %>
+            <%= link_to page, posts_path(params.merge(page: page)), 
+                class: "px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-700 transition-colors" %>
+          <% end %>
+        <% end %>
+
+        <!-- Next Page -->
+        <% if @posts.next_page %>
+          <%= link_to posts_path(params.merge(page: @posts.next_page)), 
+              class: "px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 hover:text-gray-700 transition-colors" do %>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          <% end %>
+        <% else %>
+          <span class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-100 border border-gray-300 rounded-r-md cursor-not-allowed">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </span>
+        <% end %>
+      </nav>
+    </div>
+
+    <!-- Pagination Info -->
+    <div class="mt-4 text-center text-sm text-gray-600">
+      Showing <%= (@posts.current_page - 1) * @posts.limit_value + 1 %> to 
+      <%= [@posts.current_page * @posts.limit_value, @posts.total_count].min %> 
+      of <%= @posts.total_count %> posts
+    </div>
+  <% end %>
+
+  <!-- Load More Button for Mobile (Alternative to pagination) -->
+  <div class="mt-8 text-center lg:hidden" id="load-more-container" style="display: none;">
+    <button id="load-more-btn" 
+            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-colors"
+            data-next-page="<%= @posts.next_page %>"
+            data-base-url="<%= posts_path %>">
+      Load More Posts
+    </button>
+  </div>
+</div>
+<scr
+ipt>
+document.addEventListener('DOMContentLoaded', function() {
+  // Infinite scroll functionality for mobile
+  let loading = false;
+  let currentPage = <%= @posts.current_page %>;
+  const totalPages = <%= @posts.total_pages %>;
+  
+  function loadMorePosts() {
+    if (loading || currentPage >= totalPages) return;
+    
+    loading = true;
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) {
+      loadMoreBtn.textContent = 'Loading...';
+      loadMoreBtn.disabled = true;
+    }
+    
+    const nextPage = currentPage + 1;
+    const params = new URLSearchParams(window.location.search);
+    params.set('page', nextPage);
+    
+    fetch(`<%= posts_path %>?${params.toString()}`, {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      const postsGrid = document.getElementById('posts-grid');
+      
+      data.posts.forEach(post => {
+        const postElement = createPostElement(post);
+        postsGrid.appendChild(postElement);
+      });
+      
+      currentPage = nextPage;
+      
+      if (loadMoreBtn) {
+        if (currentPage >= totalPages) {
+          loadMoreBtn.style.display = 'none';
+        } else {
+          loadMoreBtn.textContent = 'Load More Posts';
+          loadMoreBtn.disabled = false;
+        }
+      }
+      
+      loading = false;
+    })
+    .catch(error => {
+      console.error('Error loading more posts:', error);
+      if (loadMoreBtn) {
+        loadMoreBtn.textContent = 'Load More Posts';
+        loadMoreBtn.disabled = false;
+      }
+      loading = false;
+    });
+  }
+  
+  function createPostElement(post) {
+    const article = document.createElement('article');
+    article.className = 'bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group';
+    
+    const difficultyBadge = post.post_type === 'tutorial' && post.difficulty_level ? 
+      `<span class="text-xs px-2 py-1 bg-black/50 text-white rounded-full backdrop-blur-sm">${post.difficulty_level.charAt(0).toUpperCase() + post.difficulty_level.slice(1)}</span>` : '';
+    
+    const tagsHtml = post.tags.slice(0, 2).map(tag => 
+      `<a href="<%= posts_path %>?tag=${encodeURIComponent(tag)}" class="text-xs text-blue-600 hover:text-blue-800 hover:underline">#${tag}</a>`
+    ).join(' ');
+    
+    const moreTagsHtml = post.tags.length > 2 ? 
+      `<span class="text-xs text-gray-400">+${post.tags.length - 2}</span>` : '';
+    
+    article.innerHTML = `
+      <div class="relative aspect-square overflow-hidden">
+        <a href="${post.url}" class="block">
+          ${post.thumbnail_url ? 
+            `<img src="${post.thumbnail_url}" alt="${post.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">` :
+            `<div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+              <div class="text-center text-gray-400">
+                <svg class="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                </svg>
+                <span class="text-sm">No Image</span>
+              </div>
+            </div>`
+          }
+        </a>
+        <div class="absolute top-2 left-2 flex gap-1">
+          <span class="text-xs px-2 py-1 rounded-full font-medium backdrop-blur-sm ${post.post_type === 'tutorial' ? 'bg-purple-500/90 text-white' : 'bg-blue-500/90 text-white'}">
+            ${post.post_type.charAt(0).toUpperCase() + post.post_type.slice(1)}
+          </span>
+          ${difficultyBadge}
+        </div>
+        <div class="absolute top-2 right-2">
+          <div class="flex items-center gap-1 px-2 py-1 bg-black/50 text-white rounded-full text-xs backdrop-blur-sm">
+            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+            </svg>
+            ${post.likes_count}
+          </div>
+        </div>
+      </div>
+      <div class="p-4">
+        <a href="${post.url}" class="block group">
+          <h3 class="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+            ${post.title}
+          </h3>
+        </a>
+        <p class="text-gray-600 text-sm mb-3 line-clamp-2 leading-relaxed">
+          ${post.description.length > 80 ? post.description.substring(0, 80) + '...' : post.description}
+        </p>
+        <div class="flex items-center justify-between text-sm mb-3">
+          <a href="<%= posts_path %>?user=${encodeURIComponent(post.user.username)}" class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+            <div class="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
+              ${post.user.username.charAt(0).toUpperCase()}
+            </div>
+            <span class="truncate">${post.user.username}</span>
+          </a>
+          <div class="flex items-center gap-3 text-gray-500">
+            <span class="flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              ${post.comments_count}
+            </span>
+          </div>
+        </div>
+        ${post.tags.length > 0 ? `
+          <div class="flex flex-wrap gap-1">
+            ${tagsHtml}
+            ${moreTagsHtml}
+          </div>
+        ` : ''}
+        <div class="mt-2 text-xs text-gray-400">
+          ${timeAgo(new Date(post.created_at))} ago
+        </div>
+      </div>
+    `;
+    
+    return article;
+  }
+  
+  function timeAgo(date) {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return Math.floor(diffInSeconds / 60) + ' minutes';
+    if (diffInSeconds < 86400) return Math.floor(diffInSeconds / 3600) + ' hours';
+    if (diffInSeconds < 2592000) return Math.floor(diffInSeconds / 86400) + ' days';
+    if (diffInSeconds < 31536000) return Math.floor(diffInSeconds / 2592000) + ' months';
+    return Math.floor(diffInSeconds / 31536000) + ' years';
+  }
+  
+  // Load more button click handler
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', loadMorePosts);
+    
+    // Show load more button on mobile if there are more pages
+    if (window.innerWidth < 1024 && currentPage < totalPages) {
+      document.getElementById('load-more-container').style.display = 'block';
+    }
+  }
+  
+  // Auto-scroll detection for desktop
+  if (window.innerWidth >= 1024) {
+    let ticking = false;
+    
+    function checkScroll() {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      if (scrollTop + windowHeight >= documentHeight - 1000) {
+        loadMorePosts();
+      }
+      
+      ticking = false;
+    }
+    
+    window.addEventListener('scroll', function() {
+      if (!ticking) {
+        requestAnimationFrame(checkScroll);
+        ticking = true;
+      }
+    });
+  }
+});
+</script>
