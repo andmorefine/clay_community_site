@@ -51,12 +51,6 @@
     <div class="flex flex-wrap gap-2 lg:gap-4">
       <!-- Post Type Filter -->
       <div class="flex gap-1">
-        <%= link_to "All", posts_path(params.except(:post_type)), 
-            class: "px-3 py-1 text-sm rounded-full transition-colors #{params[:post_type].blank? ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
-        <%= link_to "Regular", posts_path(params.merge(post_type: 'regular')), 
-            class: "px-3 py-1 text-sm rounded-full transition-colors #{params[:post_type] == 'regular' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
-        <%= link_to "Tutorials", posts_path(params.merge(post_type: 'tutorial')), 
-            class: "px-3 py-1 text-sm rounded-full transition-colors #{params[:post_type] == 'tutorial' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
       </div>
 
       <!-- Difficulty Filter (shown only when tutorials are selected) -->
@@ -72,12 +66,6 @@
 
     <!-- Right side sort options -->
     <div class="flex gap-1">
-      <%= link_to "Latest", posts_path(params.merge(sort: 'recent')), 
-          class: "px-3 py-1 text-sm rounded-full transition-colors #{(@current_filters[:sort] == 'recent' || @current_filters[:sort].blank?) ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
-      <%= link_to "Popular", posts_path(params.merge(sort: 'popular')), 
-          class: "px-3 py-1 text-sm rounded-full transition-colors #{@current_filters[:sort] == 'popular' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
-      <%= link_to "Trending", posts_path(params.merge(sort: 'trending')), 
-          class: "px-3 py-1 text-sm rounded-full transition-colors #{@current_filters[:sort] == 'trending' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
     </div>
   </div>
 
