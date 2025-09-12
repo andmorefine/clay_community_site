@@ -12,21 +12,39 @@
 # Configure Using Gemfile
 # gem "pg"
 #
-default: &default
-  adapter: postgresql
-  encoding: unicode
-  # For details on connection pooling, see Rails configuration guide
-  # https://guides.rubyonrails.org/configuring.html#database-pooling
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
 
+default: &default
+  adapter: sqlite3
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  timeout: 5000
 
 development:
   <<: *default
-  database: clay_community_site_development
-  username: <%= ENV.fetch("DATABASE_USERNAME") { "andmorefine" } %>
-  password: <%= ENV.fetch("DATABASE_PASSWORD") { "" } %>
-  host: <%= ENV.fetch("DATABASE_HOST") { "localhost" } %>
-  port: <%= ENV.fetch("DATABASE_PORT") { 5432 } %>
+  database: storage/development.sqlite3
+
+# Warning: The database defined as "test" will be erased and
+# re-generated from your development database when you run "rake".
+# Do not set this db to the same as development or production.
+test:
+  <<: *default
+  database: storage/test.sqlite3
+
+
+# default: &default
+#   adapter: postgresql
+#   encoding: unicode
+#   # For details on connection pooling, see Rails configuration guide
+#   # https://guides.rubyonrails.org/configuring.html#database-pooling
+#   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+
+# development:
+#   <<: *default
+#   database: clay_community_site_development
+#   username: <%= ENV.fetch("DATABASE_USERNAME") { "andmorefine" } %>
+#   password: <%= ENV.fetch("DATABASE_PASSWORD") { "" } %>
+#   host: <%= ENV.fetch("DATABASE_HOST") { "localhost" } %>
+#   port: <%= ENV.fetch("DATABASE_PORT") { 5432 } %>
 
   # Schema search path. The server defaults to $user,public
   #schema_search_path: myapp,sharedapp,public
@@ -40,14 +58,14 @@ development:
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
 # Do not set this db to the same as development or production.
-test:
-  <<: *default
-  database: clay_community_site_test
-  username: <%= ENV.fetch("DATABASE_USERNAME") { "andmorefine" } %>
-  password: <%= ENV.fetch("DATABASE_PASSWORD") { "" } %>
-  host: <%= ENV.fetch("DATABASE_HOST") { "localhost" } %>
-  port: <%= ENV.fetch("DATABASE_PORT") { 5432 } %>
-  timeout: 5000
+# test:
+#   <<: *default
+#   database: clay_community_site_test
+#   username: <%= ENV.fetch("DATABASE_USERNAME") { "andmorefine" } %>
+#   password: <%= ENV.fetch("DATABASE_PASSWORD") { "" } %>
+#   host: <%= ENV.fetch("DATABASE_HOST") { "localhost" } %>
+#   port: <%= ENV.fetch("DATABASE_PORT") { 5432 } %>
+#   timeout: 5000
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
@@ -70,20 +88,37 @@ test:
 # for a full overview on how database connection configuration can be specified.
 #
 production:
-  primary: &primary_production
+  # primary: &primary_production
+  #   <<: *default
+  #   database: clay_community_site_production
+  #   username: clay_community_site
+  #   password: <%= ENV["CLAY_COMMUNITY_SITE_DATABASE_PASSWORD"] %>
+  # cache:
+  #   <<: *primary_production
+  #   database: clay_community_site_production_cache
+  #   migrations_paths: db/cache_migrate
+  # queue:
+  #   <<: *primary_production
+  #   database: clay_community_site_production_queue
+  #   migrations_paths: db/queue_migrate
+  # cable:
+  #   <<: *primary_production
+  #   database: clay_community_site_production_cable
+  #   migrations_paths: db/cable_migrate
+
+production:
+  primary:
     <<: *default
-    database: clay_community_site_production
-    username: clay_community_site
-    password: <%= ENV["CLAY_COMMUNITY_SITE_DATABASE_PASSWORD"] %>
+    database: storage/production.sqlite3
   cache:
-    <<: *primary_production
-    database: clay_community_site_production_cache
+    <<: *default
+    database: storage/production_cache.sqlite3
     migrations_paths: db/cache_migrate
   queue:
-    <<: *primary_production
-    database: clay_community_site_production_queue
+    <<: *default
+    database: storage/production_queue.sqlite3
     migrations_paths: db/queue_migrate
   cable:
-    <<: *primary_production
-    database: clay_community_site_production_cable
+    <<: *default
+    database: storage/production_cable.sqlite3
     migrations_paths: db/cable_migrate

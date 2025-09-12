@@ -20,9 +20,6 @@ gem "jbuilder"
 # Use Active Model has_secure_password [https://guides.rubyonrails.org/active_model_basics.html#securepassword]
 gem "bcrypt", "~> 3.1.7"
 
-# Authentication
-gem "devise"
-
 # Background job processing
 gem "sidekiq"
 gem "redis", ">= 4.0"

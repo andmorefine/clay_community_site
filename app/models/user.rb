@@ -1,11 +1,12 @@
 class User < ApplicationRecord
   # Authentication
-  has_secure_password
+  # has_secure_password
   
   # Profile information
   has_one_attached :profile_image
   
   # Relationships
+  has_many :sessions, dependent: :destroy
   has_many :posts, dependent: :destroy
   has_many :comments, dependent: :destroy
   has_many :likes, dependent: :destroy
@@ -33,6 +34,8 @@ class User < ApplicationRecord
   # Scopes
   scope :by_skill_level, ->(level) { where(skill_level: level) }
   scope :recent, -> { order(created_at: :desc) }
+
+  normalizes :email, with: ->(e) { e.strip.downcase }
   
   # Instance methods
   def follow(user)
