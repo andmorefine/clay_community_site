@@ -1,7 +1,4 @@
 class User < ApplicationRecord
-  # Authentication
-  has_secure_password
-  
   # Profile information
   has_one_attached :profile_image
   

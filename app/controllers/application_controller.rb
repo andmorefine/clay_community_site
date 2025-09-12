@@ -21,7 +21,7 @@ class ApplicationController < ActionController::Base
     @current_user ||= User.first || User.create!(
       email: 'test@example.com',
       username: 'testuser',
-      password: 'password123',
+      password_digest: 'password123',
       skill_level: 'beginner'
     )
   end
