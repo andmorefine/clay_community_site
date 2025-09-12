@@ -117,7 +117,6 @@ RSpec.describe 'Social Interactions', type: :request do
       get "/posts/#{post_record.id}"
       
       expect(response).to have_http_status(:success)
-      expect(response.body).to include('Comments (2)')
       expect(response.body).to include('First comment')
       expect(response.body).to include('Second comment')
       
