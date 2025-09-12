@@ -15,8 +15,13 @@ Rails.application.routes.draw do
   resources :posts do
     member do
       post :like
+      get :quick_view
     end
     resources :comments, only: [:create, :destroy]
+    resources :likes, only: [:create, :destroy]
+    collection do
+      get :search_suggestions
+    end
   end
 
   # Tags routes

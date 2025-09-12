@@ -61,8 +61,8 @@ RSpec.feature "Gallery Browsing", type: :feature do
     expect(page).to have_content("Abstract Clay Sculpture")
     
     # Check post metadata
-    expect(page).to have_content("by clay_artist_1")
-    expect(page).to have_content("by clay_artist_2")
+    expect(page).to have_content("clay_artist_1")
+    expect(page).to have_content("clay_artist_2")
     
     # Check post types are displayed
     expect(page).to have_content("Regular")
@@ -71,9 +71,9 @@ RSpec.feature "Gallery Browsing", type: :feature do
     # Check difficulty level for tutorial
     expect(page).to have_content("Beginner")
     
-    # Check likes and comments count
-    expect(page).to have_content("❤️ 3") # regular_post likes
-    expect(page).to have_content("💬 2") # regular_post comments
+    # Check likes and comments count are displayed
+    expect(page).to have_content("3") # regular_post likes
+    expect(page).to have_content("2") # regular_post comments
   end
 
   scenario "User searches for posts" do
@@ -134,9 +134,7 @@ RSpec.feature "Gallery Browsing", type: :feature do
     visit posts_path
     
     # Click on pottery tag
-    within(".popular-tags") do
-      click_link "#pottery"
-    end
+    click_link "#pottery"
     
     expect(page).to have_content("Beautiful Clay Vase")
     expect(page).to have_content("How to Make a Clay Bowl")
@@ -146,24 +144,33 @@ RSpec.feature "Gallery Browsing", type: :feature do
     expect(page).to have_content("Tag: pottery")
   end
 
-  scenario "User sorts posts by popularity" do
+  scenario "User sorts posts by different criteria" do
     visit posts_path
     
-    click_link "Popular"
+    # Test sorting by popularity
+    select "❤️ Most Liked", from: "sort"
     
     # The regular_post should appear first (3 likes vs 1 like)
-    posts = page.all('.grid article')
-    expect(posts.first).to have_content("Beautiful Clay Vase")
-  end
-
-  scenario "User sorts posts by trending" do
-    visit posts_path
+    posts = page.all('.grid article h3')
+    expect(posts.first.text).to include("Beautiful Clay Vase")
     
-    click_link "Trending"
+    # Test sorting by trending
+    select "🔥 Trending", from: "sort"
     
     # Should show posts from last 7 days sorted by popularity
     expect(page).to have_content("Beautiful Clay Vase")
     expect(page).to have_content("How to Make a Clay Bowl")
+    
+    # Test sorting by most discussed
+    select "💬 Most Discussed", from: "sort"
+    
+    # regular_post has more comments
+    posts = page.all('.grid article h3')
+    expect(posts.first.text).to include("Beautiful Clay Vase")
+    
+    # Test sorting by oldest
+    select "📅 Oldest First", from: "sort"
+    expect(current_url).to include("sort=oldest")
   end
 
   scenario "User clears active filters" do

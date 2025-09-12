@@ -40,24 +40,5 @@ class CommentsController < ApplicationController
     params.require(:comment).permit(:content)
   end
 
-  def authenticate_user!
-    # This will be implemented when authentication system is ready
-    unless user_signed_in?
-      redirect_to new_user_session_path, alert: 'Please sign in to continue.'
-    end
-  end
 
-  def current_user
-    # This will be implemented when authentication system is ready
-    @current_user ||= User.first || User.create!(
-      email: 'test@example.com',
-      username: 'testuser',
-      password: 'password123',
-      skill_level: 'beginner'
-    )
-  end
-
-  def user_signed_in?
-    current_user.present?
-  end
 end

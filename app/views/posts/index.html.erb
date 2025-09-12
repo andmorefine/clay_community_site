@@ -10,12 +10,22 @@
   </div>
 
   <!-- Search Bar -->
-  <div class="mb-6">
-    <%= form_with url: posts_path, method: :get, local: true, class: "flex gap-2" do |form| %>
-      <%= form.text_field :search, 
-          placeholder: "Search posts, users, or tags...", 
-          value: params[:search],
-          class: "flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+  <div class="mb-6 relative">
+    <%= form_with url: posts_path, method: :get, local: true, class: "flex gap-2", id: "search-form" do |form| %>
+      <div class="flex-1 relative">
+        <%= form.text_field :search, 
+            placeholder: "Search posts, users, or tags...", 
+            value: params[:search],
+            id: "search-input",
+            autocomplete: "off",
+            class: "w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" %>
+        
+        <!-- Search Suggestions Dropdown -->
+        <div id="search-suggestions" class="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg mt-1 z-10 hidden max-h-60 overflow-y-auto">
+          <!-- Suggestions will be populated by JavaScript -->
+        </div>
+      </div>
+      
       <%= form.submit "Search", 
           class: "bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition-colors" %>
       <% if params[:search].present? %>
@@ -23,6 +33,12 @@
             class: "bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg transition-colors" %>
       <% end %>
     <% end %>
+    
+    <!-- Search Tips -->
+    <div class="mt-2 text-sm text-gray-500">
+      <span class="hidden sm:inline">💡 Tips: Search by title, description, username, or tags. Use quotes for exact phrases.</span>
+      <span class="sm:hidden">💡 Search posts, users, or tags</span>
+    </div>
   </div>
 
   <!-- Active Filters Display -->
@@ -33,7 +49,7 @@
         <% @current_filters.each do |key, value| %>
           <span class="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
             <%= key.to_s.humanize %>: <%= value %>
-            <%= link_to posts_path(@current_filters.except(key)), 
+            <%= link_to posts_path(@current_filters.except(key.to_s)), 
                 class: "ml-1 text-blue-600 hover:text-blue-800" do %>
               ×
             <% end %>
@@ -51,13 +67,19 @@
     <div class="flex flex-wrap gap-2 lg:gap-4">
       <!-- Post Type Filter -->
       <div class="flex gap-1">
+        <%= link_to "All Posts", posts_path(params.to_unsafe_h.except(:post_type, :difficulty)), 
+            class: "px-3 py-1 text-sm rounded-full transition-colors #{params[:post_type].blank? ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
+        <%= link_to "Regular", posts_path(params.to_unsafe_h.merge(post_type: 'regular').except(:difficulty)), 
+            class: "px-3 py-1 text-sm rounded-full transition-colors #{params[:post_type] == 'regular' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
+        <%= link_to "Tutorials", posts_path(params.to_unsafe_h.merge(post_type: 'tutorial')), 
+            class: "px-3 py-1 text-sm rounded-full transition-colors #{params[:post_type] == 'tutorial' ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
       </div>
 
       <!-- Difficulty Filter (shown only when tutorials are selected) -->
       <% if params[:post_type] == 'tutorial' %>
         <div class="flex gap-1">
           <% %w[beginner intermediate advanced expert].each do |level| %>
-            <%= link_to level.humanize, posts_path(params.merge(difficulty: level)), 
+            <%= link_to level.humanize, posts_path(params.to_unsafe_h.merge(difficulty: level)), 
                 class: "px-3 py-1 text-sm rounded-full transition-colors #{params[:difficulty] == level ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}" %>
           <% end %>
         </div>
@@ -66,6 +88,22 @@
 
     <!-- Right side sort options -->
     <div class="flex gap-1">
+      <div class="relative">
+        <select onchange="window.location.href = this.value" 
+                class="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <% @sort_options.each do |option| %>
+            <option value="<%= posts_path(params.to_unsafe_h.merge(sort: option[:value])) %>" 
+                    <%= 'selected' if (params[:sort] || 'recent') == option[:value] %>>
+              <%= option[:icon] %> <%= option[:label] %>
+            </option>
+          <% end %>
+        </select>
+        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -75,7 +113,7 @@
       <h3 class="text-lg font-semibold mb-3">Popular Tags</h3>
       <div class="flex flex-wrap gap-2">
         <% @popular_tags.each do |tag| %>
-          <%= link_to posts_path(params.merge(tag: tag.name)), 
+          <%= link_to posts_path(params.to_unsafe_h.merge(tag: tag.name)), 
               class: "inline-flex items-center px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-sm transition-colors #{params[:tag] == tag.name ? 'bg-blue-100 text-blue-800' : 'text-gray-700'}" do %>
             #<%= tag.name %>
             <span class="ml-1 text-xs text-gray-500">(<%= tag.posts_count %>)</span>
@@ -86,7 +124,7 @@
   <% end %>
 
   <!-- Posts Grid -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-6" id="posts-grid">
+  <div class="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 xs:gap-3 sm:gap-4 lg:gap-6" id="posts-grid">
     <% @posts.each do |post| %>
       <article class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group">
         <!-- Image Container -->
@@ -121,14 +159,22 @@
             <% end %>
           </div>
           
-          <!-- Like indicator -->
-          <div class="absolute top-2 right-2">
+          <!-- Like indicator and Quick View -->
+          <div class="absolute top-2 right-2 flex flex-col gap-1">
             <div class="flex items-center gap-1 px-2 py-1 bg-black/50 text-white rounded-full text-xs backdrop-blur-sm">
               <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
               </svg>
               <%= post.likes_count %>
             </div>
+            <button onclick="openQuickViewById(<%= post.id %>); event.stopPropagation();" 
+                    class="p-1 bg-black/50 text-white rounded-full backdrop-blur-sm hover:bg-black/70 transition-colors"
+                    title="Quick View">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
           </div>
         </div>
         
@@ -155,6 +201,17 @@
             <% end %>
             
             <div class="flex items-center gap-3 text-gray-500">
+              <button data-controller="social" 
+                      data-social-post-id-value="<%= post.id %>"
+                      data-social-liked-value="<%= post.liked_by?(current_user) %>"
+                      data-social-likes-count-value="<%= post.likes_count %>"
+                      data-action="click->social#toggleLike"
+                      class="flex items-center gap-1 hover:text-red-500 transition-colors">
+                <span data-social-target="likeIcon" class="text-sm">
+                  <%= post.liked_by?(current_user) ? '❤️' : '🤍' %>
+                </span>
+                <span data-social-target="likeCount"><%= post.likes_count %></span>
+              </button>
               <span class="flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -168,7 +225,7 @@
           <% if post.tags.any? %>
             <div class="flex flex-wrap gap-1">
               <% post.tags.limit(2).each do |tag| %>
-                <%= link_to posts_path(params.merge(tag: tag.name)), 
+                <%= link_to posts_path(params.to_unsafe_h.merge(tag: tag.name)), 
                     class: "text-xs text-blue-600 hover:text-blue-800 hover:underline" do %>
                   #<%= tag.name %>
                 <% end %>
@@ -232,7 +289,7 @@
       <nav class="flex items-center space-x-1" aria-label="Pagination">
         <!-- Previous Page -->
         <% if @posts.prev_page %>
-          <%= link_to posts_path(params.merge(page: @posts.prev_page)), 
+          <%= link_to posts_path(params.to_unsafe_h.merge(page: @posts.prev_page)), 
               class: "px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md hover:bg-gray-50 hover:text-gray-700 transition-colors" do %>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -254,14 +311,14 @@
               <%= page %>
             </span>
           <% else %>
-            <%= link_to page, posts_path(params.merge(page: page)), 
+            <%= link_to page, posts_path(params.to_unsafe_h.merge(page: page)), 
                 class: "px-4 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 hover:text-gray-700 transition-colors" %>
           <% end %>
         <% end %>
 
         <!-- Next Page -->
         <% if @posts.next_page %>
-          <%= link_to posts_path(params.merge(page: @posts.next_page)), 
+          <%= link_to posts_path(params.to_unsafe_h.merge(page: @posts.next_page)), 
               class: "px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md hover:bg-gray-50 hover:text-gray-700 transition-colors" do %>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -286,33 +343,103 @@
   <% end %>
 
   <!-- Load More Button for Mobile (Alternative to pagination) -->
-  <div class="mt-8 text-center lg:hidden" id="load-more-container" style="display: none;">
-    <button id="load-more-btn" 
-            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-colors"
-            data-next-page="<%= @posts.next_page %>"
-            data-base-url="<%= posts_path %>">
-      Load More Posts
-    </button>
+  <% if @posts.respond_to?(:next_page) && @posts.next_page %>
+    <div class="mt-8 text-center lg:hidden" id="load-more-container">
+      <button id="load-more-btn" 
+              class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-colors"
+              data-next-page="<%= @posts.next_page %>"
+              data-base-url="<%= posts_path %>">
+        Load More Posts
+      </button>
+    </div>
+  <% end %>
+
+  <!-- Infinite Scroll Trigger (Hidden) -->
+  <div id="infinite-scroll-trigger" class="h-1 invisible" data-next-page="<%= @posts.next_page if @posts.respond_to?(:next_page) %>"></div>
+</div>
+
+<!-- Quick View Modal -->
+<div id="quick-view-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl max-w-4xl max-h-full overflow-hidden flex flex-col md:flex-row">
+    <!-- Image Section -->
+    <div class="md:w-2/3 bg-gray-100 flex items-center justify-center min-h-64 md:min-h-96">
+      <img id="quick-view-image" src="" alt="" class="max-w-full max-h-full object-contain">
+    </div>
+    
+    <!-- Info Section -->
+    <div class="md:w-1/3 p-6 flex flex-col">
+      <div class="flex justify-between items-start mb-4">
+        <h3 id="quick-view-title" class="text-xl font-bold text-gray-900 line-clamp-2"></h3>
+        <button onclick="closeQuickView()" class="text-gray-400 hover:text-gray-600 ml-2">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      
+      <div class="flex items-center gap-3 mb-4">
+        <div id="quick-view-avatar" class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold"></div>
+        <div>
+          <div id="quick-view-username" class="font-semibold text-gray-900"></div>
+          <div id="quick-view-date" class="text-sm text-gray-500"></div>
+        </div>
+      </div>
+      
+      <p id="quick-view-description" class="text-gray-700 mb-4 line-clamp-3 flex-1"></p>
+      
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-4 text-sm text-gray-600">
+          <span class="flex items-center gap-1">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+            </svg>
+            <span id="quick-view-likes">0</span>
+          </span>
+          <span class="flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span id="quick-view-comments">0</span>
+          </span>
+        </div>
+        <div id="quick-view-badges" class="flex gap-1"></div>
+      </div>
+      
+      <div id="quick-view-tags" class="mb-4"></div>
+      
+      <a id="quick-view-link" href="#" class="bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-lg transition-colors">
+        View Full Post
+      </a>
+    </div>
   </div>
 </div>
 
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Infinite scroll functionality for mobile
+  // Infinite scroll functionality
   let loading = false;
   let currentPage = <%= @posts.current_page %>;
   const totalPages = <%= @posts.total_pages %>;
+  let hasNextPage = <%= @posts.respond_to?(:next_page) && @posts.next_page ? 'true' : 'false' %>;
   
   function loadMorePosts() {
-    if (loading || currentPage >= totalPages) return;
+    if (loading || !hasNextPage) return;
     
     loading = true;
     const loadMoreBtn = document.getElementById('load-more-btn');
+    const trigger = document.getElementById('infinite-scroll-trigger');
+    
+    // Show loading state
     if (loadMoreBtn) {
       loadMoreBtn.textContent = 'Loading...';
       loadMoreBtn.disabled = true;
     }
+    
+    // Add loading indicator to grid
+    const postsGrid = document.getElementById('posts-grid');
+    const loadingIndicator = createLoadingIndicator();
+    postsGrid.appendChild(loadingIndicator);
     
     const nextPage = currentPage + 1;
     const params = new URLSearchParams(window.location.search);
@@ -324,20 +451,33 @@ document.addEventListener('DOMContentLoaded', function() {
         'X-Requested-With': 'XMLHttpRequest'
       }
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.json();
+    })
     .then(data => {
-      const postsGrid = document.getElementById('posts-grid');
+      // Remove loading indicator
+      loadingIndicator.remove();
       
+      // Add new posts to grid
       data.posts.forEach(post => {
         const postElement = createPostElement(post);
         postsGrid.appendChild(postElement);
       });
       
-      currentPage = nextPage;
+      currentPage = data.pagination.current_page;
+      hasNextPage = data.pagination.has_next_page;
       
+      // Update trigger for next page
+      if (trigger) {
+        trigger.dataset.nextPage = hasNextPage ? (currentPage + 1) : '';
+      }
+      
+      // Update load more button
       if (loadMoreBtn) {
-        if (currentPage >= totalPages) {
+        if (!hasNextPage) {
           loadMoreBtn.style.display = 'none';
+          document.getElementById('load-more-container').style.display = 'none';
         } else {
           loadMoreBtn.textContent = 'Load More Posts';
           loadMoreBtn.disabled = false;
@@ -348,12 +488,47 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch(error => {
       console.error('Error loading more posts:', error);
+      
+      // Remove loading indicator
+      loadingIndicator.remove();
+      
+      // Show error message
+      const errorElement = createErrorElement();
+      postsGrid.appendChild(errorElement);
+      
       if (loadMoreBtn) {
         loadMoreBtn.textContent = 'Load More Posts';
         loadMoreBtn.disabled = false;
       }
       loading = false;
     });
+  }
+  
+  function createLoadingIndicator() {
+    const div = document.createElement('div');
+    div.className = 'col-span-full flex justify-center items-center py-8';
+    div.innerHTML = `
+      <div class="flex items-center gap-3 text-gray-500">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+        <span>Loading more posts...</span>
+      </div>
+    `;
+    return div;
+  }
+  
+  function createErrorElement() {
+    const div = document.createElement('div');
+    div.className = 'col-span-full flex justify-center items-center py-8';
+    div.innerHTML = `
+      <div class="text-center text-gray-500">
+        <p class="mb-2">Failed to load more posts</p>
+        <button onclick="this.parentElement.parentElement.remove(); loadMorePosts();" 
+                class="text-blue-600 hover:text-blue-800 underline">
+          Try again
+        </button>
+      </div>
+    `;
+    return div;
   }
   
   function createPostElement(post) {
@@ -363,18 +538,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const difficultyBadge = post.post_type === 'tutorial' && post.difficulty_level ? 
       `<span class="text-xs px-2 py-1 bg-black/50 text-white rounded-full backdrop-blur-sm">${post.difficulty_level.charAt(0).toUpperCase() + post.difficulty_level.slice(1)}</span>` : '';
     
-    const tagsHtml = post.tags.slice(0, 2).map(tag => 
-      `<a href="<%= posts_path %>?tag=${encodeURIComponent(tag)}" class="text-xs text-blue-600 hover:text-blue-800 hover:underline">#${tag}</a>`
-    ).join(' ');
+    const tagsHtml = post.tags.slice(0, 2).map(tag => {
+      const tagName = typeof tag === 'object' ? tag.name : tag;
+      return `<a href="<%= posts_path %>?tag=${encodeURIComponent(tagName)}" class="text-xs text-blue-600 hover:text-blue-800 hover:underline">#${tagName}</a>`;
+    }).join(' ');
     
     const moreTagsHtml = post.tags.length > 2 ? 
       `<span class="text-xs text-gray-400">+${post.tags.length - 2}</span>` : '';
+    
+    // Escape HTML to prevent XSS
+    const escapeHtml = (text) => {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    };
     
     article.innerHTML = `
       <div class="relative aspect-square overflow-hidden">
         <a href="${post.url}" class="block">
           ${post.thumbnail_url ? 
-            `<img src="${post.thumbnail_url}" alt="${post.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">` :
+            `<img src="${post.thumbnail_url}" alt="${escapeHtml(post.title)}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy">` :
             `<div class="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
               <div class="text-center text-gray-400">
                 <svg class="w-12 h-12 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
@@ -391,30 +574,38 @@ document.addEventListener('DOMContentLoaded', function() {
           </span>
           ${difficultyBadge}
         </div>
-        <div class="absolute top-2 right-2">
+        <div class="absolute top-2 right-2 flex flex-col gap-1">
           <div class="flex items-center gap-1 px-2 py-1 bg-black/50 text-white rounded-full text-xs backdrop-blur-sm">
             <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
               <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
             </svg>
             ${post.likes_count}
           </div>
+          <button onclick="openQuickViewById(${post.id}); event.stopPropagation();" 
+                  class="p-1 bg-black/50 text-white rounded-full backdrop-blur-sm hover:bg-black/70 transition-colors"
+                  title="Quick View">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </button>
         </div>
       </div>
       <div class="p-4">
         <a href="${post.url}" class="block group">
           <h3 class="font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
-            ${post.title}
+            ${escapeHtml(post.title)}
           </h3>
         </a>
         <p class="text-gray-600 text-sm mb-3 line-clamp-2 leading-relaxed">
-          ${post.description.length > 80 ? post.description.substring(0, 80) + '...' : post.description}
+          ${escapeHtml(post.description.length > 80 ? post.description.substring(0, 80) + '...' : post.description)}
         </p>
         <div class="flex items-center justify-between text-sm mb-3">
           <a href="<%= posts_path %>?user=${encodeURIComponent(post.user.username)}" class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
             <div class="w-6 h-6 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
               ${post.user.username.charAt(0).toUpperCase()}
             </div>
-            <span class="truncate">${post.user.username}</span>
+            <span class="truncate">${escapeHtml(post.user.username)}</span>
           </a>
           <div class="flex items-center gap-3 text-gray-500">
             <span class="flex items-center gap-1">
@@ -456,29 +647,47 @@ document.addEventListener('DOMContentLoaded', function() {
   const loadMoreBtn = document.getElementById('load-more-btn');
   if (loadMoreBtn) {
     loadMoreBtn.addEventListener('click', loadMorePosts);
-    
-    // Show load more button on mobile if there are more pages
-    if (window.innerWidth < 1024 && currentPage < totalPages) {
-      document.getElementById('load-more-container').style.display = 'block';
-    }
   }
   
-  // Auto-scroll detection for desktop
-  if (window.innerWidth >= 1024) {
+  // Intersection Observer for infinite scroll (modern browsers)
+  if ('IntersectionObserver' in window) {
+    const trigger = document.getElementById('infinite-scroll-trigger');
+    if (trigger) {
+      const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+          if (entry.isIntersecting && hasNextPage && !loading) {
+            loadMorePosts();
+          }
+        });
+      }, {
+        rootMargin: '200px 0px',
+        threshold: 0.1
+      });
+      
+      observer.observe(trigger);
+    }
+  } else {
+    // Fallback for older browsers
     let ticking = false;
+    let lastScrollTop = 0;
     
     function checkScroll() {
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
       
-      if (scrollTop + windowHeight >= documentHeight - 1000) {
-        loadMorePosts();
+      // Only load more if scrolling down and near bottom
+      if (scrollTop > lastScrollTop && scrollTop + windowHeight >= documentHeight - 500) {
+        if (hasNextPage && !loading) {
+          loadMorePosts();
+        }
       }
       
+      lastScrollTop = scrollTop;
       ticking = false;
     }
     
+    // Throttled scroll event listener
     window.addEventListener('scroll', function() {
       if (!ticking) {
         requestAnimationFrame(checkScroll);
@@ -486,5 +695,263 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+  
+  // Search suggestions functionality
+  const searchInput = document.getElementById('search-input');
+  const searchSuggestions = document.getElementById('search-suggestions');
+  let searchTimeout;
+  let selectedSuggestionIndex = -1;
+  
+  if (searchInput && searchSuggestions) {
+    searchInput.addEventListener('input', function() {
+      const query = this.value.trim();
+      
+      clearTimeout(searchTimeout);
+      
+      if (query.length < 2) {
+        hideSuggestions();
+        return;
+      }
+      
+      searchTimeout = setTimeout(() => {
+        fetchSearchSuggestions(query);
+      }, 300);
+    });
+    
+    searchInput.addEventListener('keydown', function(e) {
+      const suggestions = searchSuggestions.querySelectorAll('.suggestion-item');
+      
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, suggestions.length - 1);
+        updateSuggestionSelection(suggestions);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+        updateSuggestionSelection(suggestions);
+      } else if (e.key === 'Enter' && selectedSuggestionIndex >= 0) {
+        e.preventDefault();
+        suggestions[selectedSuggestionIndex].click();
+      } else if (e.key === 'Escape') {
+        hideSuggestions();
+      }
+    });
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+        hideSuggestions();
+      }
+    });
+  }
+  
+  function fetchSearchSuggestions(query) {
+    fetch(`<%= search_suggestions_posts_path %>?q=${encodeURIComponent(query)}`, {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      displaySuggestions(data.suggestions, query);
+    })
+    .catch(error => {
+      console.error('Error fetching search suggestions:', error);
+      hideSuggestions();
+    });
+  }
+  
+  function displaySuggestions(suggestions, query) {
+    if (suggestions.length === 0) {
+      hideSuggestions();
+      return;
+    }
+    
+    const html = suggestions.map((suggestion, index) => {
+      const icon = suggestion.type === 'tag' ? '#' : 
+                   suggestion.type === 'user' ? '@' : '🔍';
+      const countText = suggestion.count > 0 ? ` (${suggestion.count})` : '';
+      
+      return `
+        <div class="suggestion-item px-4 py-2 hover:bg-gray-50 cursor-pointer flex items-center gap-2 ${index === selectedSuggestionIndex ? 'bg-blue-50' : ''}"
+             data-index="${index}">
+          <span class="text-gray-400">${icon}</span>
+          <span class="flex-1">${highlightMatch(suggestion.text, query)}</span>
+          ${countText ? `<span class="text-xs text-gray-400">${countText}</span>` : ''}
+        </div>
+      `;
+    }).join('');
+    
+    searchSuggestions.innerHTML = html;
+    searchSuggestions.classList.remove('hidden');
+    
+    // Store suggestions for click handlers
+    searchSuggestions.dataset.suggestions = JSON.stringify(suggestions);
+    
+    // Add click handlers
+    searchSuggestions.querySelectorAll('.suggestion-item').forEach((item) => {
+      item.addEventListener('click', function() {
+        const index = parseInt(this.dataset.index);
+        const storedSuggestions = JSON.parse(searchSuggestions.dataset.suggestions);
+        const suggestion = storedSuggestions[index];
+        
+        if (suggestion.type === 'search') {
+          searchInput.value = suggestion.text;
+          document.getElementById('search-form').submit();
+        } else {
+          window.location.href = suggestion.url;
+        }
+      });
+    });
+    
+    selectedSuggestionIndex = -1;
+  }
+  
+  function highlightMatch(text, query) {
+    const regex = new RegExp(`(${query})`, 'gi');
+    return text.replace(regex, '<strong>$1</strong>');
+  }
+  
+  function updateSuggestionSelection(suggestions) {
+    suggestions.forEach((item, index) => {
+      if (index === selectedSuggestionIndex) {
+        item.classList.add('bg-blue-50');
+      } else {
+        item.classList.remove('bg-blue-50');
+      }
+    });
+  }
+  
+  function hideSuggestions() {
+    searchSuggestions.classList.add('hidden');
+    selectedSuggestionIndex = -1;
+  }
+  
+  // Keyboard navigation
+  document.addEventListener('keydown', function(e) {
+    // Press 'r' to refresh/reload posts
+    if (e.key === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const activeElement = document.activeElement;
+      if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        window.location.reload();
+      }
+    }
+    
+    // Press '/' to focus search
+    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const activeElement = document.activeElement;
+      if (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        searchInput.focus();
+      }
+    }
+  });
+  
+  // Performance optimization: Lazy load images that come into view
+  if ('IntersectionObserver' in window) {
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          if (img.dataset.src) {
+            img.src = img.dataset.src;
+            img.removeAttribute('data-src');
+            imageObserver.unobserve(img);
+          }
+        }
+      });
+    });
+    
+    // Observe existing images
+    document.querySelectorAll('img[data-src]').forEach(img => {
+      imageObserver.observe(img);
+    });
+  }
+  
+  // Quick view functionality
+  window.openQuickViewById = function(postId) {
+    fetch(`/posts/${postId}/quick_view`, {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => response.json())
+    .then(postData => {
+      openQuickView(postData);
+    })
+    .catch(error => {
+      console.error('Error fetching post data:', error);
+    });
+  };
+  
+  window.openQuickView = function(postData) {
+    const modal = document.getElementById('quick-view-modal');
+    const image = document.getElementById('quick-view-image');
+    const title = document.getElementById('quick-view-title');
+    const avatar = document.getElementById('quick-view-avatar');
+    const username = document.getElementById('quick-view-username');
+    const date = document.getElementById('quick-view-date');
+    const description = document.getElementById('quick-view-description');
+    const likes = document.getElementById('quick-view-likes');
+    const comments = document.getElementById('quick-view-comments');
+    const badges = document.getElementById('quick-view-badges');
+    const tags = document.getElementById('quick-view-tags');
+    const link = document.getElementById('quick-view-link');
+    
+    // Populate modal with post data
+    image.src = postData.medium_image_url || postData.thumbnail_url || '';
+    image.alt = postData.title;
+    title.textContent = postData.title;
+    avatar.textContent = postData.user.username.charAt(0).toUpperCase();
+    username.textContent = postData.user.username;
+    date.textContent = timeAgo(new Date(postData.created_at)) + ' ago';
+    description.textContent = postData.description;
+    likes.textContent = postData.likes_count;
+    comments.textContent = postData.comments_count;
+    link.href = postData.url;
+    
+    // Badges
+    let badgesHtml = `<span class="text-xs px-2 py-1 rounded-full font-medium ${postData.post_type === 'tutorial' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}">${postData.post_type.charAt(0).toUpperCase() + postData.post_type.slice(1)}</span>`;
+    if (postData.post_type === 'tutorial' && postData.difficulty_level) {
+      badgesHtml += `<span class="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded-full">${postData.difficulty_level.charAt(0).toUpperCase() + postData.difficulty_level.slice(1)}</span>`;
+    }
+    badges.innerHTML = badgesHtml;
+    
+    // Tags
+    if (postData.tags && postData.tags.length > 0) {
+      const tagsHtml = postData.tags.slice(0, 4).map(tag => {
+        const tagName = typeof tag === 'object' ? tag.name : tag;
+        return `<span class="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">#${tagName}</span>`;
+      }).join(' ');
+      tags.innerHTML = tagsHtml;
+    } else {
+      tags.innerHTML = '';
+    }
+    
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  };
+  
+  window.closeQuickView = function() {
+    const modal = document.getElementById('quick-view-modal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+  };
+  
+  // Close modal on escape key or background click
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeQuickView();
+    }
+  });
+  
+  document.getElementById('quick-view-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeQuickView();
+    }
+  });
 });
 </script>

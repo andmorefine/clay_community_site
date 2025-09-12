@@ -40,7 +40,12 @@ class Tag < ApplicationRecord
   end
   
   def self.popular_tags(limit = 10)
-    popular.limit(limit)
+    joins(:posts)
+      .where(posts: { published: true })
+      .group('tags.id')
+      .order('COUNT(posts.id) DESC')
+      .limit(limit)
+      .select('tags.*, COUNT(posts.id) as posts_count')
   end
   
   def self.search(query)

@@ -82,11 +82,49 @@ class Post < ApplicationRecord
     return nil unless primary_image
     
     if primary_image.variable?
-      Rails.application.routes.url_helpers.rails_representation_url(
+      Rails.application.routes.url_helpers.rails_representation_path(
         primary_image.variant(resize_to_limit: [300, 300])
       )
     else
-      Rails.application.routes.url_helpers.rails_blob_url(primary_image)
+      Rails.application.routes.url_helpers.rails_blob_path(primary_image)
+    end
+  end
+
+  def medium_image_url
+    return nil unless primary_image
+    
+    if primary_image.variable?
+      Rails.application.routes.url_helpers.rails_representation_path(
+        primary_image.variant(resize_to_limit: [800, 800])
+      )
+    else
+      Rails.application.routes.url_helpers.rails_blob_path(primary_image)
+    end
+  end
+
+  def full_image_url
+    return nil unless primary_image
+    Rails.application.routes.url_helpers.rails_blob_path(primary_image)
+  end
+
+  def image_urls
+    return [] unless images.attached?
+    
+    images.map do |image|
+      if image.variable?
+        {
+          thumbnail: Rails.application.routes.url_helpers.rails_representation_url(
+            image.variant(resize_to_limit: [300, 300])
+          ),
+          medium: Rails.application.routes.url_helpers.rails_representation_url(
+            image.variant(resize_to_limit: [800, 800])
+          ),
+          full: Rails.application.routes.url_helpers.rails_blob_url(image)
+        }
+      else
+        url = Rails.application.routes.url_helpers.rails_blob_url(image)
+        { thumbnail: url, medium: url, full: url }
+      end
     end
   end
   
