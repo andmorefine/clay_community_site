@@ -30,6 +30,7 @@ class Post < ApplicationRecord
   scope :by_tag, ->(tag_name) { joins(:tags).where(tags: { name: tag_name }) }
   scope :tutorials, -> { where(post_type: :tutorial) }
   scope :regular_posts, -> { where(post_type: :regular) }
+  scope :from_followed_users, ->(user) { where(user_id: user.followed_users.pluck(:id)) }
   
   # Instance methods
   def likes_count

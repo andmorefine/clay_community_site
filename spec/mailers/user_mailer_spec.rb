@@ -2,12 +2,12 @@ require "rails_helper"
 
 RSpec.describe UserMailer, type: :mailer do
   describe "email_verification" do
-    let(:user) { create(:user) }
+    let(:user) { create(:user, email: 'test@example.com') }
     let(:mail) { UserMailer.email_verification(user) }
 
     it "renders the headers" do
       expect(mail.subject).to eq("Verify your email address - Clay Community")
-      expect(mail.to).to eq(["user1@example.com"])
+      expect(mail.to).to eq(["test@example.com"])
       expect(mail.from).to eq(["from@example.com"])
     end
 

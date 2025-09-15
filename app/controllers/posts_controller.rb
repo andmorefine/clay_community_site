@@ -1,5 +1,7 @@
 class PostsController < ApplicationController
-  before_action :authenticate_user!, except: [:index, :show]
+  include Authentication
+  
+  allow_unauthenticated_access only: [:index, :show]
   before_action :set_post, only: [:show, :edit, :update, :destroy, :quick_view, :like]
   before_action :authorize_post_owner, only: [:edit, :update, :destroy]
 
@@ -86,6 +88,51 @@ class PostsController < ApplicationController
                          .where(tags: { id: @post.tag_ids })
                          .distinct
                          .limit(4)
+  end
+
+  def feed
+
+    # Get posts from followed users
+    followed_user_ids = current_user.followed_users.pluck(:id)
+    
+    if followed_user_ids.empty?
+      # If user doesn't follow anyone, show popular posts
+      @posts = Post.published
+                   .includes(:user, :tags, images_attachments: :blob)
+                   .left_joins(:likes)
+                   .group('posts.id')
+                   .order('COUNT(likes.id) DESC, posts.created_at DESC')
+      @feed_type = 'popular'
+      @message = "You're not following anyone yet. Here are some popular posts to get you started!"
+    else
+      # Show posts from followed users in chronological order
+      @posts = Post.published
+                   .includes(:user, :tags, images_attachments: :blob)
+                   .where(user_id: followed_user_ids)
+                   .recent
+      @feed_type = 'following'
+      
+      if @posts.empty?
+        # If followed users haven't posted anything, show popular posts
+        @posts = Post.published
+                     .includes(:user, :tags, images_attachments: :blob)
+                     .left_joins(:likes)
+                     .group('posts.id')
+                     .order('COUNT(likes.id) DESC, posts.created_at DESC')
+        @feed_type = 'popular'
+        @message = "No recent posts from people you follow. Here are some popular posts instead!"
+      end
+    end
+    
+    # Pagination
+    per_page = params[:per_page]&.to_i || 12
+    per_page = [per_page, 50].min
+    @posts = @posts.page(params[:page]).per(per_page)
+    
+    respond_to do |format|
+      format.html
+      format.json { render json: feed_json_response }
+    end
   end
 
   def new
@@ -333,5 +380,44 @@ class PostsController < ApplicationController
     }
   end
 
+  def feed_json_response
+    {
+      posts: @posts.map do |post|
+        {
+          id: post.id,
+          title: post.title,
+          description: post.description,
+          post_type: post.post_type,
+          difficulty_level: post.difficulty_level,
+          user: {
+            id: post.user.id,
+            username: post.user.username,
+            display_name: post.user.display_name
+          },
+          tags: post.tags.map { |tag| { id: tag.id, name: tag.name } },
+          likes_count: post.likes_count,
+          comments_count: post.comments_count,
+          created_at: post.created_at,
+          updated_at: post.updated_at,
+          thumbnail_url: post.thumbnail_url,
+          medium_image_url: post.medium_image_url,
+          image_urls: post.image_urls,
+          url: post_url(post),
+          published: post.published
+        }
+      end,
+      pagination: {
+        current_page: @posts.current_page,
+        total_pages: @posts.total_pages,
+        total_count: @posts.total_count,
+        per_page: @posts.limit_value,
+        has_next_page: @posts.next_page.present?,
+        has_prev_page: @posts.prev_page.present?
+      },
+      feed_type: @feed_type,
+      message: @message,
+      following_count: current_user.following_count
+    }
+  end
 
 end

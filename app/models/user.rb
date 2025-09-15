@@ -47,6 +47,12 @@ class User < ApplicationRecord
 
   normalizes :email, with: ->(e) { e.strip.downcase }
   
+  # Class methods
+  def self.authenticate_by(attributes)
+    user = find_by(email: attributes[:email])
+    user&.authenticate(attributes[:password]) ? user : nil
+  end
+
   # Instance methods
   def follow(user)
     return false if user == self

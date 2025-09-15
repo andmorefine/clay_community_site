@@ -1,0 +1,89 @@
+<div class="max-w-4xl mx-auto p-6">
+  <!-- Header -->
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div class="flex items-center space-x-4">
+      <% if @user.profile_image.attached? %>
+        <%= image_tag @user.profile_image, class: "w-16 h-16 rounded-full object-cover" %>
+      <% else %>
+        <div class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center">
+          <span class="text-gray-600 text-xl font-bold"><%= @user.username.first.upcase %></span>
+        </div>
+      <% end %>
+      
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900"><%= @user.display_name %> is Following</h1>
+        <p class="text-gray-600"><%= @user.following_count %> following</p>
+      </div>
+    </div>
+    
+    <div class="mt-4 flex space-x-4">
+      <%= link_to "← Back to Profile", user_path(@user), class: "text-indigo-600 hover:text-indigo-800" %>
+      <%= link_to "Followers", followers_user_path(@user), class: "text-gray-600 hover:text-gray-800" %>
+    </div>
+  </div>
+
+  <!-- Following List -->
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <% if @following.any? %>
+      <div class="space-y-4">
+        <% @following.each do |followed_user| %>
+          <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+            <div class="flex items-center space-x-4">
+              <% if followed_user.profile_image.attached? %>
+                <%= image_tag followed_user.profile_image, class: "w-12 h-12 rounded-full object-cover" %>
+              <% else %>
+                <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                  <span class="text-gray-600 font-bold"><%= followed_user.username.first.upcase %></span>
+                </div>
+              <% end %>
+              
+              <div>
+                <%= link_to user_path(followed_user), class: "font-medium text-gray-900 hover:text-indigo-600" do %>
+                  <%= followed_user.display_name %>
+                <% end %>
+                <p class="text-sm text-gray-600">
+                  <%= followed_user.skill_level.capitalize %> level • 
+                  <%= pluralize(followed_user.posts_count, 'post') %>
+                </p>
+                <% if followed_user.bio.present? %>
+                  <p class="text-sm text-gray-500 mt-1"><%= truncate(followed_user.bio, length: 100) %></p>
+                <% end %>
+              </div>
+            </div>
+            
+            <% if current_user && current_user != followed_user %>
+              <div class="flex-shrink-0">
+                <% if current_user.following?(followed_user) %>
+                  <%= link_to "Unfollow", unfollow_user_path(followed_user), 
+                      method: :delete,
+                      data: { confirm: "Are you sure you want to unfollow #{followed_user.display_name}?" },
+                      class: "px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700" %>
+                <% else %>
+                  <%= link_to "Follow", follow_user_path(followed_user), 
+                      method: :post,
+                      class: "px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700" %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+      
+      <!-- Pagination -->
+      <% if @following.respond_to?(:total_pages) && @following.total_pages > 1 %>
+        <div class="mt-6 flex justify-center">
+          <%= paginate @following, theme: 'twitter-bootstrap-4' %>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="text-center py-8">
+        <p class="text-gray-500 text-lg"><%= @user.display_name %> isn't following anyone yet.</p>
+        <% if current_user == @user %>
+          <p class="text-gray-400 text-sm mt-2">
+            <%= link_to "Discover users to follow", posts_path, class: "text-indigo-600 hover:text-indigo-800" %>
+          </p>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

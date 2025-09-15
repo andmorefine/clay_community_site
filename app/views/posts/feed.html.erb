@@ -1,0 +1,160 @@
+<div class="max-w-6xl mx-auto p-6">
+  <!-- Feed Header -->
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Your Feed</h1>
+        <p class="text-gray-600 mt-1">
+          <% if @feed_type == 'following' %>
+            Latest posts from people you follow
+          <% else %>
+            Popular posts in the community
+          <% end %>
+        </p>
+      </div>
+      
+      <div class="flex space-x-3">
+        <%= link_to "Discover", posts_path, 
+            class: "px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200" %>
+        <%= link_to "Create Post", new_post_path, 
+            class: "px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700" %>
+      </div>
+    </div>
+    
+    <% if @message %>
+      <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+        <p class="text-blue-800"><%= @message %></p>
+        <% if @feed_type == 'popular' && current_user.following_count == 0 %>
+          <p class="text-blue-700 text-sm mt-2">
+            <%= link_to "Find users to follow", posts_path, class: "underline hover:no-underline" %> 
+            to see their posts in your personalized feed.
+          </p>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Feed Stats -->
+  <% if @feed_type == 'following' %>
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+      <div class="flex items-center justify-center space-x-6 text-sm text-gray-600">
+        <span>Following <%= current_user.following_count %> users</span>
+        <span>•</span>
+        <span><%= pluralize(@posts.total_count, 'post') %> in your feed</span>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Posts Grid -->
+  <% if @posts.any? %>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <% @posts.each do |post| %>
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+          <% if post.images.attached? %>
+            <%= link_to post_path(post) do %>
+              <%= image_tag post.images.first, class: "w-full h-48 object-cover" %>
+            <% end %>
+          <% end %>
+          
+          <div class="p-4">
+            <!-- Post Header with User Info -->
+            <div class="flex items-center space-x-3 mb-3">
+              <% if post.user.profile_image.attached? %>
+                <%= image_tag post.user.profile_image, class: "w-8 h-8 rounded-full object-cover" %>
+              <% else %>
+                <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                  <span class="text-gray-600 text-xs font-bold"><%= post.user.username.first.upcase %></span>
+                </div>
+              <% end %>
+              
+              <div class="flex-1 min-w-0">
+                <%= link_to user_path(post.user), class: "text-sm font-medium text-gray-900 hover:text-indigo-600 truncate" do %>
+                  <%= post.user.display_name %>
+                <% end %>
+                <p class="text-xs text-gray-500"><%= time_ago_in_words(post.created_at) %> ago</p>
+              </div>
+            </div>
+            
+            <!-- Post Content -->
+            <h3 class="font-medium text-gray-900 mb-2">
+              <%= link_to post.title, post_path(post), class: "hover:text-indigo-600" %>
+            </h3>
+            
+            <% if post.post_type == 'tutorial' %>
+              <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 mb-2">
+                📚 Tutorial
+                <% if post.difficulty_level.present? %>
+                  • <%= post.difficulty_level.capitalize %>
+                <% end %>
+              </span>
+            <% end %>
+            
+            <p class="text-sm text-gray-600 mb-3"><%= truncate(post.description, length: 100) %></p>
+            
+            <!-- Tags -->
+            <% if post.tags.any? %>
+              <div class="flex flex-wrap gap-1 mb-3">
+                <% post.tags.limit(3).each do |tag| %>
+                  <%= link_to posts_path(tag: tag.name), 
+                      class: "inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-700 hover:bg-gray-200" do %>
+                    #<%= tag.name %>
+                  <% end %>
+                <% end %>
+                <% if post.tags.count > 3 %>
+                  <span class="text-xs text-gray-500">+<%= post.tags.count - 3 %> more</span>
+                <% end %>
+              </div>
+            <% end %>
+            
+            <!-- Post Actions -->
+            <div class="flex items-center justify-between text-sm text-gray-500">
+              <div class="flex items-center space-x-4">
+                <span class="flex items-center">
+                  ❤️ <%= post.likes.count %>
+                </span>
+                <span class="flex items-center">
+                  💬 <%= post.comments.count %>
+                </span>
+              </div>
+              
+              <% if current_user %>
+                <div class="flex items-center space-x-2">
+                  <%= link_to post_path(post), 
+                      class: "text-indigo-600 hover:text-indigo-800 text-xs" do %>
+                    View
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Pagination -->
+    <% if @posts.respond_to?(:total_pages) && @posts.total_pages > 1 %>
+      <div class="flex justify-center">
+        <%= paginate @posts, theme: 'twitter-bootstrap-4' %>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="bg-white rounded-lg shadow-md p-12 text-center">
+      <div class="text-6xl mb-4">🎨</div>
+      <h3 class="text-xl font-medium text-gray-900 mb-2">No posts in your feed</h3>
+      <p class="text-gray-600 mb-6">
+        <% if current_user.following_count == 0 %>
+          Start following other clay artists to see their posts here.
+        <% else %>
+          The people you follow haven't posted anything recently.
+        <% end %>
+      </p>
+      
+      <div class="flex justify-center space-x-4">
+        <%= link_to "Discover Posts", posts_path, 
+            class: "px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700" %>
+        <%= link_to "Create Your First Post", new_post_path, 
+            class: "px-6 py-3 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200" %>
+      </div>
+    </div>
+  <% end %>
+</div>

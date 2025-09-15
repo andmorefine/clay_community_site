@@ -13,6 +13,63 @@ export default class extends Controller {
     this.updateLikeButton()
   }
 
+  // Follow/Unfollow functionality
+  async toggleFollow(event) {
+    event.preventDefault()
+    
+    const link = event.target.closest('a')
+    const originalText = link.textContent.trim()
+    const isFollowing = originalText === 'Unfollow'
+    
+    // Optimistic update
+    link.textContent = isFollowing ? 'Follow' : 'Unfollow'
+    link.classList.toggle('bg-gray-600', !isFollowing)
+    link.classList.toggle('hover:bg-gray-700', !isFollowing)
+    link.classList.toggle('bg-indigo-600', isFollowing)
+    link.classList.toggle('hover:bg-indigo-700', isFollowing)
+    
+    try {
+      const response = await fetch(link.href, {
+        method: isFollowing ? 'DELETE' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': this.getCSRFToken()
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+      
+      const data = await response.json()
+      
+      // Update followers count if element exists
+      const followersCountElement = document.querySelector('[data-followers-count]')
+      if (followersCountElement) {
+        followersCountElement.textContent = `${data.followers_count} followers`
+      }
+      
+      // Show success message
+      this.showNotification(
+        data.status === 'followed' ? 'Now following user!' : 'Unfollowed user!', 
+        'success'
+      )
+      
+    } catch (error) {
+      console.error('Error toggling follow:', error)
+      
+      // Revert optimistic update on error
+      link.textContent = originalText
+      link.classList.toggle('bg-gray-600', isFollowing)
+      link.classList.toggle('hover:bg-gray-700', isFollowing)
+      link.classList.toggle('bg-indigo-600', !isFollowing)
+      link.classList.toggle('hover:bg-indigo-700', !isFollowing)
+      
+      // Show error message
+      this.showNotification('Failed to update follow status. Please try again.', 'error')
+    }
+  }
+
   // Like/Unlike functionality
   async toggleLike(event) {
     event.preventDefault()

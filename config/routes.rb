@@ -7,7 +7,14 @@ Rails.application.routes.draw do
   get "verify_email/:token", to: "email_verifications#show", as: :verify_email
   
   # User profile routes
-  resources :users, only: [:show, :edit, :update]
+  resources :users, only: [:show, :edit, :update] do
+    member do
+      post :follow
+      delete :unfollow
+      get :followers
+      get :following
+    end
+  end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -33,6 +40,9 @@ Rails.application.routes.draw do
 
   # Tags routes
   resources :tags, only: [:index, :show]
+
+  # Feed route
+  get "feed", to: "posts#feed"
 
   # Root route
   root "posts#index"

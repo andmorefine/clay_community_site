@@ -15,17 +15,42 @@
       <div class="flex-1">
         <div class="flex items-center justify-between">
           <h1 class="text-2xl font-bold text-gray-900"><%= @user.display_name %></h1>
-          <% if current_user == @user %>
-            <%= link_to "Edit Profile", edit_user_path(@user), 
-                class: "px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700" %>
-          <% end %>
+          <div class="flex space-x-3">
+            <% if current_user == @user %>
+              <%= link_to "Edit Profile", edit_user_path(@user), 
+                  class: "px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700" %>
+            <% elsif current_user %>
+              <% if current_user.following?(@user) %>
+                <%= link_to "Unfollow", unfollow_user_path(@user), 
+                    method: :delete,
+                    data: { 
+                      confirm: "Are you sure you want to unfollow #{@user.display_name}?",
+                      controller: "social",
+                      action: "click->social#toggleFollow"
+                    },
+                    class: "px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700" %>
+              <% else %>
+                <%= link_to "Follow", follow_user_path(@user), 
+                    method: :post,
+                    data: { 
+                      controller: "social",
+                      action: "click->social#toggleFollow"
+                    },
+                    class: "px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700" %>
+              <% end %>
+            <% end %>
+          </div>
         </div>
         
         <div class="mt-2 flex items-center space-x-4 text-sm text-gray-600">
           <span class="capitalize"><%= @user.skill_level %> level</span>
           <span><%= pluralize(@user.posts_count, 'post') %></span>
-          <span><%= pluralize(@user.followers_count, 'follower') %></span>
-          <span><%= @user.following_count %> following</span>
+          <%= link_to followers_user_path(@user), class: "hover:text-indigo-600" do %>
+            <span><%= pluralize(@user.followers_count, 'follower') %></span>
+          <% end %>
+          <%= link_to following_user_path(@user), class: "hover:text-indigo-600" do %>
+            <span><%= @user.following_count %> following</span>
+          <% end %>
         </div>
         
         <% if @user.bio.present? %>

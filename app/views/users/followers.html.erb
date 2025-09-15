@@ -1,0 +1,87 @@
+<div class="max-w-4xl mx-auto p-6">
+  <!-- Header -->
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div class="flex items-center space-x-4">
+      <% if @user.profile_image.attached? %>
+        <%= image_tag @user.profile_image, class: "w-16 h-16 rounded-full object-cover" %>
+      <% else %>
+        <div class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center">
+          <span class="text-gray-600 text-xl font-bold"><%= @user.username.first.upcase %></span>
+        </div>
+      <% end %>
+      
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900"><%= @user.display_name %>'s Followers</h1>
+        <p class="text-gray-600"><%= pluralize(@user.followers_count, 'follower') %></p>
+      </div>
+    </div>
+    
+    <div class="mt-4 flex space-x-4">
+      <%= link_to "← Back to Profile", user_path(@user), class: "text-indigo-600 hover:text-indigo-800" %>
+      <%= link_to "Following", following_user_path(@user), class: "text-gray-600 hover:text-gray-800" %>
+    </div>
+  </div>
+
+  <!-- Followers List -->
+  <div class="bg-white rounded-lg shadow-md p-6">
+    <% if @followers.any? %>
+      <div class="space-y-4">
+        <% @followers.each do |follower| %>
+          <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+            <div class="flex items-center space-x-4">
+              <% if follower.profile_image.attached? %>
+                <%= image_tag follower.profile_image, class: "w-12 h-12 rounded-full object-cover" %>
+              <% else %>
+                <div class="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center">
+                  <span class="text-gray-600 font-bold"><%= follower.username.first.upcase %></span>
+                </div>
+              <% end %>
+              
+              <div>
+                <%= link_to user_path(follower), class: "font-medium text-gray-900 hover:text-indigo-600" do %>
+                  <%= follower.display_name %>
+                <% end %>
+                <p class="text-sm text-gray-600">
+                  <%= follower.skill_level.capitalize %> level • 
+                  <%= pluralize(follower.posts_count, 'post') %>
+                </p>
+                <% if follower.bio.present? %>
+                  <p class="text-sm text-gray-500 mt-1"><%= truncate(follower.bio, length: 100) %></p>
+                <% end %>
+              </div>
+            </div>
+            
+            <% if current_user && current_user != follower %>
+              <div class="flex-shrink-0">
+                <% if current_user.following?(follower) %>
+                  <%= link_to "Unfollow", unfollow_user_path(follower), 
+                      method: :delete,
+                      data: { confirm: "Are you sure you want to unfollow #{follower.display_name}?" },
+                      class: "px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700" %>
+                <% else %>
+                  <%= link_to "Follow", follow_user_path(follower), 
+                      method: :post,
+                      class: "px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700" %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+      
+      <!-- Pagination -->
+      <% if @followers.respond_to?(:total_pages) && @followers.total_pages > 1 %>
+        <div class="mt-6 flex justify-center">
+          <%= paginate @followers, theme: 'twitter-bootstrap-4' %>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="text-center py-8">
+        <p class="text-gray-500 text-lg">No followers yet.</p>
+        <% if current_user != @user %>
+          <p class="text-gray-400 text-sm mt-2">Be the first to follow <%= @user.display_name %>!</p>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
