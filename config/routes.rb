@@ -1,4 +1,25 @@
 Rails.application.routes.draw do
+  # Moderation routes
+  resources :reports, only: [:create]
+  resources :appeals, only: [:create, :show, :index]
+  
+  # Admin routes
+  namespace :admin do
+    resources :moderation, only: [:index] do
+      collection do
+        get :reports
+        get :appeals
+        get :users
+      end
+      member do
+        get :show_report
+        post :resolve_report
+        get :show_appeal
+        post :resolve_appeal
+        get :user_actions
+      end
+    end
+  end
   # Authentication routes
   resource :session, only: [:new, :create, :destroy]
   resources :passwords, param: :token, only: [:new, :create, :edit, :update]

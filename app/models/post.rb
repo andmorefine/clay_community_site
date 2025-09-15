@@ -6,6 +6,7 @@ class Post < ApplicationRecord
   has_many :liked_users, through: :likes, source: :user
   has_many :post_tags, dependent: :destroy
   has_many :tags, through: :post_tags
+  has_many :reports, as: :reportable, dependent: :destroy
   
   # Validations
   validates :title, presence: true, length: { maximum: 100 }
@@ -17,6 +18,9 @@ class Post < ApplicationRecord
   
   # Custom validation for tutorial posts
   validate :tutorial_must_have_difficulty_level
+  
+  # Callbacks
+  after_create :check_for_spam
   
   # Enums
   enum :post_type, { regular: 0, tutorial: 1 }
@@ -135,5 +139,9 @@ class Post < ApplicationRecord
     if tutorial? && difficulty_level.blank?
       errors.add(:difficulty_level, "must be specified for tutorial posts")
     end
+  end
+  
+  def check_for_spam
+    SpamDetectionService.auto_moderate_content(self, user)
   end
 end

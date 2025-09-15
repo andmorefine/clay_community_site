@@ -27,6 +27,14 @@ class User < ApplicationRecord
   has_many :reverse_follows, foreign_key: 'followed_id', class_name: 'Follow', dependent: :destroy
   has_many :followers, through: :reverse_follows, source: :follower
   
+  # Moderation relationships
+  has_many :reports, dependent: :destroy
+  has_many :moderation_actions, dependent: :destroy
+  has_many :appeals, dependent: :destroy
+  has_many :moderated_actions, foreign_key: 'moderator_id', class_name: 'ModerationAction'
+  has_many :resolved_reports, foreign_key: 'resolved_by_id', class_name: 'Report'
+  has_many :reviewed_appeals, foreign_key: 'reviewed_by_id', class_name: 'Appeal'
+  
   # Validations
   validates :email, presence: true, uniqueness: { case_sensitive: false }, 
             format: { with: URI::MailTo::EMAIL_REGEXP }
@@ -34,12 +42,14 @@ class User < ApplicationRecord
             length: { minimum: 3, maximum: 50 },
             format: { with: /\A[a-zA-Z0-9_]+\z/, message: "can only contain letters, numbers, and underscores" }
   validates :skill_level, inclusion: { in: %w[beginner intermediate advanced expert] }
+  validates :role, inclusion: { in: %w[user moderator admin] }
   validates :bio, length: { maximum: 500 }
   validates :password, length: { minimum: 8 }, if: -> { new_record? || !password.nil? }
   
   # Callbacks
   before_save :downcase_email
   before_save :downcase_username
+  after_create :check_for_spam
   
   # Scopes
   scope :by_skill_level, ->(level) { where(skill_level: level) }
@@ -94,6 +104,67 @@ class User < ApplicationRecord
   
   def send_email_verification
     UserMailer.email_verification(self).deliver_later
+  end
+  
+  # Moderation methods
+  def admin?
+    role == 'admin'
+  end
+  
+  def moderator?
+    role == 'moderator' || admin?
+  end
+  
+  def suspended?
+    suspended && (suspended_until.nil? || suspended_until > Time.current)
+  end
+  
+  def suspend!(duration: nil, reason: nil, moderator: nil)
+    expires_at = duration ? Time.current + duration : nil
+    update!(
+      suspended: true,
+      suspended_until: expires_at
+    )
+    
+    if moderator
+      moderation_actions.create!(
+        moderator: moderator,
+        action_type: expires_at ? 'temporary_suspension' : 'permanent_suspension',
+        reason: reason || 'User suspended',
+        target: self,
+        expires_at: expires_at
+      )
+    end
+  end
+  
+  def unsuspend!(moderator: nil)
+    update!(
+      suspended: false,
+      suspended_until: nil
+    )
+    
+    if moderator
+      moderation_actions.create!(
+        moderator: moderator,
+        action_type: 'content_approval',
+        reason: 'Suspension lifted',
+        target: self
+      )
+    end
+  end
+  
+  def add_warning!(reason, moderator)
+    increment!(:warning_count)
+    moderation_actions.create!(
+      moderator: moderator,
+      action_type: 'warning',
+      reason: reason,
+      target: self
+    )
+  end
+  
+  def check_for_spam
+    SpamDetectionService.auto_moderate_content(self, self)
   end
   
   private

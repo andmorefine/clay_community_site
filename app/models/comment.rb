@@ -1,9 +1,13 @@
 class Comment < ApplicationRecord
   belongs_to :user
   belongs_to :post
+  has_many :reports, as: :reportable, dependent: :destroy
   
   # Validations
   validates :content, presence: true, length: { minimum: 1, maximum: 1000 }
+  
+  # Callbacks
+  after_create :check_for_spam
   
   # Scopes
   scope :recent, -> { order(created_at: :desc) }
@@ -40,5 +44,11 @@ class Comment < ApplicationRecord
     else
       formatted_created_at
     end
+  end
+  
+  private
+  
+  def check_for_spam
+    SpamDetectionService.auto_moderate_content(self, user)
   end
 end

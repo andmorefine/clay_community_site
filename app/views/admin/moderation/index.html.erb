@@ -1,0 +1,199 @@
+<% content_for :title, "Moderation Dashboard" %>
+
+<div class="container mx-auto px-4 py-8">
+  <div class="flex justify-between items-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">Moderation Dashboard</h1>
+    <div class="flex space-x-4">
+      <%= link_to "All Reports", admin_moderation_reports_path, class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" %>
+      <%= link_to "All Appeals", admin_moderation_appeals_path, class: "bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded" %>
+      <%= link_to "User Management", admin_moderation_users_path, class: "bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded" %>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+              <span class="text-white font-bold"><%= @pending_reports.count %></span>
+            </div>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Pending Reports</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @pending_reports.count %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+              <span class="text-white font-bold"><%= @pending_appeals.count %></span>
+            </div>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Pending Appeals</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @pending_appeals.count %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+      <div class="p-5">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+              <span class="text-white font-bold"><%= @recent_actions.count %></span>
+            </div>
+          </div>
+          <div class="ml-5 w-0 flex-1">
+            <dl>
+              <dt class="text-sm font-medium text-gray-500 truncate">Recent Actions</dt>
+              <dd class="text-lg font-medium text-gray-900"><%= @recent_actions.count %></dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Reports -->
+  <div class="bg-white shadow overflow-hidden sm:rounded-md mb-8">
+    <div class="px-4 py-5 sm:px-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Pending Reports</h3>
+      <p class="mt-1 max-w-2xl text-sm text-gray-500">Reports that need your attention</p>
+    </div>
+    <ul class="divide-y divide-gray-200">
+      <% @pending_reports.each do |report| %>
+        <li>
+          <div class="px-4 py-4 sm:px-6">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    <%= report.reason.humanize %>
+                  </span>
+                </div>
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-gray-900">
+                    <%= report.reportable_type %> reported by <%= report.user.username %>
+                  </p>
+                  <p class="text-sm text-gray-500">
+                    <%= truncate(report.description, length: 100) %>
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-500"><%= time_ago_in_words(report.created_at) %> ago</span>
+                <%= link_to "Review", admin_moderation_show_report_path(report), 
+                    class: "bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded text-sm" %>
+              </div>
+            </div>
+          </div>
+        </li>
+      <% end %>
+      <% if @pending_reports.empty? %>
+        <li class="px-4 py-4 sm:px-6 text-center text-gray-500">
+          No pending reports
+        </li>
+      <% end %>
+    </ul>
+  </div>
+
+  <!-- Pending Appeals -->
+  <div class="bg-white shadow overflow-hidden sm:rounded-md mb-8">
+    <div class="px-4 py-5 sm:px-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Pending Appeals</h3>
+      <p class="mt-1 max-w-2xl text-sm text-gray-500">Appeals that need your review</p>
+    </div>
+    <ul class="divide-y divide-gray-200">
+      <% @pending_appeals.each do |appeal| %>
+        <li>
+          <div class="px-4 py-4 sm:px-6">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <%= appeal.moderation_action.action_type.humanize %>
+                  </span>
+                </div>
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-gray-900">
+                    Appeal by <%= appeal.user.username %>
+                  </p>
+                  <p class="text-sm text-gray-500">
+                    <%= truncate(appeal.reason, length: 100) %>
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-500"><%= time_ago_in_words(appeal.created_at) %> ago</span>
+                <%= link_to "Review", admin_moderation_show_appeal_path(appeal), 
+                    class: "bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded text-sm" %>
+              </div>
+            </div>
+          </div>
+        </li>
+      <% end %>
+      <% if @pending_appeals.empty? %>
+        <li class="px-4 py-4 sm:px-6 text-center text-gray-500">
+          No pending appeals
+        </li>
+      <% end %>
+    </ul>
+  </div>
+
+  <!-- Recent Actions -->
+  <div class="bg-white shadow overflow-hidden sm:rounded-md">
+    <div class="px-4 py-5 sm:px-6">
+      <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Moderation Actions</h3>
+      <p class="mt-1 max-w-2xl text-sm text-gray-500">Latest actions taken by moderators</p>
+    </div>
+    <ul class="divide-y divide-gray-200">
+      <% @recent_actions.each do |action| %>
+        <li>
+          <div class="px-4 py-4 sm:px-6">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <div class="flex-shrink-0">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                    <%= action.action_type == 'warning' ? 'bg-yellow-100 text-yellow-800' : 
+                        action.action_type.include?('suspension') ? 'bg-red-100 text-red-800' : 
+                        'bg-green-100 text-green-800' %>">
+                    <%= action.action_type.humanize %>
+                  </span>
+                </div>
+                <div class="ml-4">
+                  <p class="text-sm font-medium text-gray-900">
+                    <%= action.user.username %> by <%= action.moderator.username %>
+                  </p>
+                  <p class="text-sm text-gray-500">
+                    <%= truncate(action.reason, length: 100) %>
+                  </p>
+                </div>
+              </div>
+              <div class="text-sm text-gray-500">
+                <%= time_ago_in_words(action.created_at) %> ago
+              </div>
+            </div>
+          </div>
+        </li>
+      <% end %>
+      <% if @recent_actions.empty? %>
+        <li class="px-4 py-4 sm:px-6 text-center text-gray-500">
+          No recent actions
+        </li>
+      <% end %>
+    </ul>
+  </div>
+</div>
