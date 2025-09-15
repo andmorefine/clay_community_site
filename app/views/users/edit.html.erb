@@ -1,0 +1,71 @@
+<div class="max-w-2xl mx-auto mt-8 p-6 bg-white rounded-lg shadow-md">
+  <h1 class="text-2xl font-bold text-center mb-6">Edit Profile</h1>
+  
+  <%= form_with model: @user, local: true, class: "space-y-6" do |form| %>
+    <% if @user.errors.any? %>
+      <div class="bg-red-50 border border-red-200 rounded-md p-4">
+        <h3 class="text-red-800 font-medium">Please fix the following errors:</h3>
+        <ul class="mt-2 text-red-700 text-sm list-disc list-inside">
+          <% @user.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <!-- Profile Image -->
+    <div>
+      <%= form.label :profile_image, class: "block text-sm font-medium text-gray-700" %>
+      <div class="mt-1 flex items-center space-x-4">
+        <% if @user.profile_image.attached? %>
+          <%= image_tag @user.profile_image, class: "w-16 h-16 rounded-full object-cover" %>
+        <% else %>
+          <div class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center">
+            <span class="text-gray-600 text-lg font-bold"><%= @user.username.first.upcase %></span>
+          </div>
+        <% end %>
+        <%= form.file_field :profile_image, accept: "image/*",
+            class: "block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" %>
+      </div>
+      <p class="mt-1 text-sm text-gray-500">JPG, PNG, or WebP. Max 10MB.</p>
+    </div>
+
+    <!-- Username -->
+    <div>
+      <%= form.label :username, class: "block text-sm font-medium text-gray-700" %>
+      <%= form.text_field :username, required: true,
+          class: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" %>
+      <p class="mt-1 text-sm text-gray-500">Letters, numbers, and underscores only</p>
+    </div>
+
+    <!-- Skill Level -->
+    <div>
+      <%= form.label :skill_level, class: "block text-sm font-medium text-gray-700" %>
+      <%= form.select :skill_level, 
+          options_for_select([
+            ['Beginner', 'beginner'],
+            ['Intermediate', 'intermediate'], 
+            ['Advanced', 'advanced'],
+            ['Expert', 'expert']
+          ], @user.skill_level),
+          {},
+          { class: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" } %>
+    </div>
+
+    <!-- Bio -->
+    <div>
+      <%= form.label :bio, class: "block text-sm font-medium text-gray-700" %>
+      <%= form.text_area :bio, rows: 4,
+          class: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" %>
+      <p class="mt-1 text-sm text-gray-500">Tell us about yourself and your clay work (max 500 characters)</p>
+    </div>
+
+    <!-- Submit Button -->
+    <div class="flex items-center justify-between">
+      <%= link_to "Cancel", user_path(@user), 
+          class: "px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50" %>
+      <%= form.submit "Update Profile", 
+          class: "px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+    </div>
+  <% end %>
+</div>

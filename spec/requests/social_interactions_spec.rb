@@ -6,9 +6,8 @@ RSpec.describe 'Social Interactions', type: :request do
   let(:post_record) { create(:post, user: other_user) }
 
   before do
-    # Mock authentication for request tests
-    allow_any_instance_of(ApplicationController).to receive(:current_user).and_return(user)
-    allow_any_instance_of(ApplicationController).to receive(:user_signed_in?).and_return(true)
+    # Sign in the user for request tests
+    post session_path, params: { email: user.email, password: "password123" }
   end
 
   describe 'POST /posts/:id/like' do

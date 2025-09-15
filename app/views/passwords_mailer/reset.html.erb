@@ -1,4 +1,23 @@
+<h1>Password Reset Request</h1>
+
+<p>Hi <%= @user.username %>,</p>
+
+<p>You requested a password reset for your Clay Community account.</p>
+
+<p>You can reset your password within the next 20 minutes by clicking the button below:</p>
+
 <p>
-  You can reset your password within the next 15 minutes on
-  <%= link_to "this password reset page", edit_password_url(@user.password_reset_token) %>.
+  <a href="<%= edit_password_url(@user.generate_token_for(:password_reset)) %>" style="background-color: #4CAF50; color: white; padding: 14px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">
+    Reset Password
+  </a>
 </p>
+
+<p>Or copy and paste this link into your browser:</p>
+<p><%= edit_password_url(@user.generate_token_for(:password_reset)) %></p>
+
+<p><strong>This link will expire in 20 minutes.</strong></p>
+
+<p>If you didn't request this password reset, please ignore this email.</p>
+
+<p>Thanks,<br>
+The Clay Community Team</p>

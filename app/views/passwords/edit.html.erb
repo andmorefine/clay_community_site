@@ -1,9 +1,29 @@
-<h1>Update your password</h1>
+<div class="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-md">
+  <h1 class="text-2xl font-bold text-center mb-6">Update your password</h1>
+  
+  <% if flash[:alert] %>
+    <div class="bg-red-50 border border-red-200 rounded-md p-4 mb-4">
+      <p class="text-red-800"><%= flash[:alert] %></p>
+    </div>
+  <% end %>
 
-<%= tag.div(flash[:alert], style: "color:red") if flash[:alert] %>
+  <%= form_with url: password_path(params[:token]), method: :put, local: true, class: "space-y-4" do |form| %>
+    <div>
+      <%= form.label :password, "New Password", class: "block text-sm font-medium text-gray-700" %>
+      <%= form.password_field :password, required: true, autocomplete: "new-password", maxlength: 72,
+          class: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" %>
+      <p class="mt-1 text-sm text-gray-500">Minimum 8 characters</p>
+    </div>
 
-<%= form_with url: password_path(params[:token]), method: :put do |form| %>
-  <%= form.password_field :password, required: true, autocomplete: "new-password", placeholder: "Enter new password", maxlength: 72 %><br>
-  <%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", placeholder: "Repeat new password", maxlength: 72 %><br>
-  <%= form.submit "Save" %>
-<% end %>
+    <div>
+      <%= form.label :password_confirmation, "Confirm New Password", class: "block text-sm font-medium text-gray-700" %>
+      <%= form.password_field :password_confirmation, required: true, autocomplete: "new-password", maxlength: 72,
+          class: "mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" %>
+    </div>
+
+    <div>
+      <%= form.submit "Update Password", 
+          class: "w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+    </div>
+  <% end %>
+</div>

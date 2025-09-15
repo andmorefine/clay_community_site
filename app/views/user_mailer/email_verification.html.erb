@@ -1,0 +1,21 @@
+<h1>Welcome to Clay Community!</h1>
+
+<p>Hi <%= @user.username %>,</p>
+
+<p>Thank you for joining Clay Community! Please verify your email address by clicking the button below:</p>
+
+<p>
+  <a href="<%= @verification_url %>" style="background-color: #4CAF50; color: white; padding: 14px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">
+    Verify Email Address
+  </a>
+</p>
+
+<p>Or copy and paste this link into your browser:</p>
+<p><%= @verification_url %></p>
+
+<p><strong>This link will expire in 2 days.</strong></p>
+
+<p>If you didn't create an account with us, please ignore this email.</p>
+
+<p>Thanks,<br>
+The Clay Community Team</p>

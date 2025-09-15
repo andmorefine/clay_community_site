@@ -34,7 +34,33 @@
           </div>
           <div class="flex items-center space-x-4">
             <%= link_to "Gallery", posts_path, class: "text-gray-700 hover:text-gray-900" %>
-            <%= link_to "Create Post", new_post_path, class: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium" %>
+            
+            <% if user_signed_in? %>
+              <%= link_to "Create Post", new_post_path, class: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium" %>
+              
+              <div class="relative group">
+                <button class="flex items-center space-x-2 text-gray-700 hover:text-gray-900">
+                  <% if current_user.profile_image.attached? %>
+                    <%= image_tag current_user.profile_image, class: "w-8 h-8 rounded-full object-cover" %>
+                  <% else %>
+                    <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
+                      <span class="text-gray-600 text-sm font-bold"><%= current_user.username.first.upcase %></span>
+                    </div>
+                  <% end %>
+                  <span><%= current_user.username %></span>
+                </button>
+                
+                <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block">
+                  <%= link_to "My Profile", user_path(current_user), class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" %>
+                  <%= link_to "Edit Profile", edit_user_path(current_user), class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" %>
+                  <div class="border-t border-gray-100"></div>
+                  <%= link_to "Sign Out", session_path, method: :delete, class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" %>
+                </div>
+              </div>
+            <% else %>
+              <%= link_to "Sign In", new_session_path, class: "text-gray-700 hover:text-gray-900" %>
+              <%= link_to "Sign Up", new_registration_path, class: "bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium" %>
+            <% end %>
           </div>
         </div>
       </div>

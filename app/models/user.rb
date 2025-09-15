@@ -1,4 +1,16 @@
 class User < ApplicationRecord
+  # Authentication
+  has_secure_password
+  
+  # Token generation for email verification and password reset
+  generates_token_for :email_verification, expires_in: 2.days do
+    email
+  end
+  
+  generates_token_for :password_reset, expires_in: 20.minutes do
+    password_salt.last(10)
+  end
+  
   # Profile information
   has_one_attached :profile_image
   
@@ -23,6 +35,7 @@ class User < ApplicationRecord
             format: { with: /\A[a-zA-Z0-9_]+\z/, message: "can only contain letters, numbers, and underscores" }
   validates :skill_level, inclusion: { in: %w[beginner intermediate advanced expert] }
   validates :bio, length: { maximum: 500 }
+  validates :password, length: { minimum: 8 }, if: -> { new_record? || !password.nil? }
   
   # Callbacks
   before_save :downcase_email
@@ -62,6 +75,19 @@ class User < ApplicationRecord
   
   def display_name
     username
+  end
+  
+  # Email verification methods
+  def verify_email!
+    update!(email_verified: true, email_verified_at: Time.current)
+  end
+  
+  def email_verified?
+    email_verified
+  end
+  
+  def send_email_verification
+    UserMailer.email_verification(self).deliver_later
   end
   
   private

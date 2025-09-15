@@ -2,9 +2,8 @@ FactoryBot.define do
   factory :user do
     sequence(:email) { |n| "user#{n}@example.com" }
     sequence(:username) { |n| "user#{n}" }
-    password_digest { "password123" }
-    # password_confirmation { "password123" }
-    # bio { "I love working with clay and creating beautiful pottery pieces." }
+    password { "password123" }
+    password_confirmation { "password123" }
     skill_level { %w[beginner intermediate advanced expert].sample }
     bio         { Faker::Lorem.sentence(word_count: 10) }
     
