@@ -1,4 +1,6 @@
 class UsersController < ApplicationController
+  include Authentication
+
   allow_unauthenticated_access only: [:show]
   before_action :set_user, only: [:show]
   before_action :set_current_user_and_authorize, only: [:edit, :update]

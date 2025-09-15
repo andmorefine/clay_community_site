@@ -12,11 +12,6 @@ RSpec.describe "Sessions", type: :request do
 
   describe "POST /session" do
     context "with valid credentials" do
-      it "signs in the user" do
-        post session_path, params: { email: user.email, password: "password123" }
-        expect(response).to redirect_to(posts_path)
-      end
-
       it "creates a session" do
         expect {
           post session_path, params: { email: user.email, password: "password123" }

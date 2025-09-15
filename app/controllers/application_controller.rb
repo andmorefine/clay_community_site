@@ -1,6 +1,4 @@
-class ApplicationController < ActionController::Base
-  include Authentication
-  
+class ApplicationController < ActionController::Base  
   # Only allow modern browsers supporting webp images, web push, badges, import maps, CSS nesting, and CSS :has.
   allow_browser versions: :modern
 
@@ -13,6 +11,9 @@ class ApplicationController < ActionController::Base
     unless user_signed_in?
       redirect_to new_session_path, alert: 'Please sign in to continue.'
     end
+  end
+
+  def current_user
   end
 
   def user_signed_in?
